@@ -1,0 +1,162 @@
+name: Build Certy Executables
+
+on:
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pillow openpyxl fpdf2 pyinstaller
+
+      - name: Build executable
+        shell: pwsh
+        run: |
+          pyinstaller --clean --noconfirm `
+            --onefile `
+            --windowed `
+            --name Certy `
+            --icon icon.ico `
+            --add-data "fonts;fonts" `
+            --add-data "app;app" `
+            --hidden-import PIL._tkinter_finder `
+            --collect-all fpdf2 `
+            --collect-all openpyxl `
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Certy-windows
+          path: dist/Certy.exe
+          retention-days: 7
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y python3-tk
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pillow openpyxl fpdf2 pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --clean --noconfirm \
+            --onefile \
+            --name Certy \
+            --add-data "fonts:fonts" \
+            --add-data "app:app" \
+            --hidden-import PIL._tkinter_finder \
+            --collect-all fpdf2 \
+            --collect-all openpyxl \
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Certy-linux
+          path: dist/Certy
+          retention-days: 7
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pillow openpyxl fpdf2 pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --clean --noconfirm \
+            --onefile \
+            --windowed \
+            --name Certy \
+            --add-data "fonts:fonts" \
+            --add-data "app:app" \
+            --hidden-import PIL._tkinter_finder \
+            --collect-all fpdf2 \
+            --collect-all openpyxl \
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Certy-macos
+          path: dist/Certy
+          retention-days: 7
+
+  release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Rename binaries
+        run: |
+          mv artifacts/Certy-linux/Certy   artifacts/Certy-linux/Certy-linux
+          mv artifacts/Certy-macos/Certy   artifacts/Certy-macos/Certy-macos
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/Certy-windows/Certy.exe
+            artifacts/Certy-linux/Certy-linux
+            artifacts/Certy-macos/Certy-macos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
