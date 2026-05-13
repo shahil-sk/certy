@@ -37,6 +37,10 @@ Load your design, drag fields into position, map your data, and generate a PDF f
 - **Project files** — save your session as a `.certy` file and reload it later.
 - **Non-blocking UI** — generation runs in a background thread with a live progress bar.
 
+## Preview
+<img width="1340" height="812" alt="image" src="https://github.com/user-attachments/assets/cdb78bb3-7a6d-43f4-a06d-040b174db056" />
+
+
 ## Installation
 
 Download the latest release for your platform:
