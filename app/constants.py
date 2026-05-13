@@ -1,84 +1,83 @@
 # ---------------------------------------------------------------------------
-# Theme palette  —  single source of truth for every colour in the app
+# Theme palette  —  "Obsidian Studio v4"
+# Refined high-contrast dark theme for better visibility & readability
 # ---------------------------------------------------------------------------
-#
-# Design language: "Obsidian Studio"
-# Deep neutral blacks with warm-tinted surfaces, crisp violet-indigo accent,
-# and tight contrast ratios for legibility. Inspired by high-end creative tools.
-# ---------------------------------------------------------------------------
+
 C = {
     # ── backgrounds ─────────────────────────────────────────────────────────
-    "bg":         "#0a0b0f",   # root window — near-black with cool tint
-    "surface":    "#111318",   # panel / card — one step up
-    "surface2":   "#181b22",   # field rows / inner cards
-    "surface3":   "#1f2330",   # inputs, comboboxes, text fields
-    "nav":        "#0d0e13",   # topbar — deepest surface
-    "canvas_bg":  "#0c0d12",   # canvas background
+    "bg":         "#07090d",   # richer deep black
+    "surface":    "#10141c",   # clearer separation
+    "surface2":   "#171c26",
+    "surface3":   "#1f2633",
+    "nav":        "#0b0d12",
+    "canvas_bg":  "#0d1017",
 
     # ── accents ──────────────────────────────────────────────────────────────
-    "accent":     "#6c74ff",   # primary — vivid violet-indigo
-    "accent2":    "#5560f0",   # hover / pressed state
-    "accent3":    "#818cff",   # lighter accent for highlights
-    "accent_dim": "#1e2250",   # subtle accent-tinted bg (badges, chips)
-    "accent_glow":"#6c74ff28", # translucent glow for focus rings
+    "accent":     "#7c84ff",   # brighter indigo for visibility
+    "accent2":    "#6670ff",
+    "accent3":    "#9aa3ff",
+    "accent_dim": "#232a5a",
+    "accent_glow":"#7c84ff35",
 
-    "success":    "#2dd4a0",   # teal-green
-    "success2":   "#1ab888",   # green hover
-    "success_dim":"#0d2e24",   # subtle green bg
+    "success":    "#36e0aa",
+    "success2":   "#20c997",
+    "success_dim":"#103329",
 
-    "danger":     "#ff6b6b",   # warm red
-    "danger2":    "#e85555",   # red hover
-    "danger_dim": "#2e1414",   # subtle red bg
+    "danger":     "#ff7575",
+    "danger2":    "#ff5c5c",
+    "danger_dim": "#341818",
 
-    "warning":    "#f5c542",   # golden amber
-    "warning_dim":"#2b2110",   # subtle amber bg
+    "warning":    "#ffd45a",
+    "warning_dim":"#33260f",
 
     # ── text ─────────────────────────────────────────────────────────────────
-    "text":       "#edf0f7",   # primary — soft cool white
-    "subtext":    "#8b93a8",   # secondary / labels
-    "muted":      "#3d4455",   # placeholder / disabled
-    "text_inv":   "#0a0b0f",   # inverse text (on accent buttons)
+    "text":       "#f5f7ff",   # brighter white for readability
+    "subtext":    "#aab3c5",   # easier-to-read secondary text
+    "muted":      "#5d667c",   # visible placeholders
+    "text_inv":   "#05060a",
 
-    # ── borders & structural ──────────────────────────────────────────────────
-    "border":     "#232738",   # default divider
-    "border2":    "#2d3347",   # slightly lighter border (hover / focus)
-    "row_alt":    "#141720",   # alternating row tint
-    "log_bg":     "#080910",   # log / terminal area
+    # ── borders & structure ─────────────────────────────────────────────────
+    "border":     "#2b3242",
+    "border2":    "#3a4358",
+    "row_alt":    "#141a24",
+    "log_bg":     "#090b10",
     "white":      "#ffffff",
 
-    # ── interactive states ────────────────────────────────────────────────────
-    "btn_idle":   "#1a1d2c",   # toolbar / toggle idle
-    "btn_hover":  "#22263a",   # toolbar / toggle hover
-    "btn_active": "#6c74ff",   # toolbar / toggle active
-    "btn_press":  "#5560f0",   # pressed
+    # ── interactive states ──────────────────────────────────────────────────
+    "btn_idle":   "#1c2230",
+    "btn_hover":  "#2a3245",
+    "btn_active": "#7c84ff",
+    "btn_press":  "#6670ff",
 
-    # ── elevation shadows (use as .configure() bg on separator frames) ────────
-    "shadow":     "#05060a",   # deepest shadow tone for layered depth
+    # ── shadows ─────────────────────────────────────────────────────────────
+    "shadow":     "#030407",
 }
 
-APP_TITLE         = "Certy"
-APP_VERSION       = "3.2.0"
+APP_TITLE          = "Certy"
+APP_VERSION        = "4.0.1"
 
-CANVAS_MAX_W      = 1100
-CANVAS_MAX_H      = 750
-PX_TO_MM          = 0.264583
+CANVAS_MAX_W       = 1100
+CANVAS_MAX_H       = 750
+PX_TO_MM           = 0.264583
 DEFAULT_FONT_SIZE  = 32
-SIDEBAR_W         = 330       # slightly wider for breathing room
+SIDEBAR_W          = 330
 
-# ── Spacing & radius tokens (use in widget padding/relief configs) ────────────
+# ── spacing ────────────────────────────────────────────────────────────────
 PAD_XS   = 2
 PAD_SM   = 6
 PAD_MD   = 12
 PAD_LG   = 20
 PAD_XL   = 32
 
-RADIUS_SM = 4    # subtle rounding (entries, small chips)
-RADIUS_MD = 8    # cards, panels
-RADIUS_LG = 12   # dialogs, large surfaces
+# ── radius ─────────────────────────────────────────────────────────────────
+RADIUS_SM = 4
+RADIUS_MD = 8
+RADIUS_LG = 12
 
-# ── Typography scale (points) ─────────────────────────────────────────────────
-FONT_FAMILY_UI   = "Segoe UI"          # Windows; falls back gracefully on macOS/Linux
-FONT_FAMILY_MONO = "Cascadia Code"     # log / code areas; fallback: Consolas
+# ── typography ─────────────────────────────────────────────────────────────
+FONT_FAMILY_UI   = "Segoe UI"
+FONT_FAMILY_MONO = "Cascadia Code"
+
 FONT_SZ_XS  = 9
 FONT_SZ_SM  = 10
 FONT_SZ_MD  = 11
