@@ -5,17 +5,17 @@
 
 **Certy** is a desktop app for bulk certificate generation from a PNG template and a spreadsheet.
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/shahil-sk/certflow/build.yml?style=for-the-badge)](https://github.com/shahil-sk/certflow/actions)
-[![Latest Release](https://img.shields.io/github/v/release/shahil-sk/certflow?style=for-the-badge)](https://github.com/shahil-sk/certflow/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/shahil-sk/certflow/total?style=for-the-badge)](https://github.com/shahil-sk/certflow/releases)
-[![License](https://img.shields.io/github/license/shahil-sk/certflow?style=for-the-badge)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/shahil-sk/certy/build.yml?style=for-the-badge)](https://github.com/shahil-sk/certy/actions)
+[![Latest Release](https://img.shields.io/github/v/release/shahil-sk/certy?style=for-the-badge)](https://github.com/shahil-sk/certy/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/shahil-sk/certy/total?style=for-the-badge)](https://github.com/shahil-sk/certy/releases)
+[![License](https://img.shields.io/github/license/shahil-sk/certy?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.7+-blue?style=for-the-badge&logo=python)](https://python.org)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-black?style=for-the-badge)](https://github.com/shahil-sk/certflow/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-black?style=for-the-badge)](https://github.com/shahil-sk/certy/releases)
 [![Ko-Fi](https://img.shields.io/badge/Support-Ko--Fi-ff5f5f?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/shahilsk)
 
 <br>
 
-[Download](https://github.com/shahil-sk/certflow/releases/latest) &bull;
+[Download](https://github.com/shahil-sk/certy/releases/latest) &bull;
 [Development](#development) &bull;
 [Contributors](#contributors)
 
@@ -41,13 +41,13 @@ Load your design, drag fields into position, map your data, and generate a PDF f
 
 Download the latest release for your platform:
 
-### [Windows](https://github.com/shahil-sk/certflow/releases/latest) | [Linux](https://github.com/shahil-sk/certflow/releases/latest) | [macOS](https://github.com/shahil-sk/certflow/releases/latest)
+### [Windows](https://github.com/shahil-sk/certy/releases/latest) | [Linux](https://github.com/shahil-sk/certy/releases/latest) | [macOS](https://github.com/shahil-sk/certy/releases/latest)
 
 ## Development
 
 ```bash
-git clone https://github.com/shahil-sk/certflow.git
-cd certflow
+git clone https://github.com/shahil-sk/certy.git
+cd certy
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
