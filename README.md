@@ -1,7 +1,7 @@
 <div align="center">
 
 # Certy
-<img src="icon.svg" width="180" alt="Certy logo" />
+<img src="icon.svg" width="280" alt="Certy logo" />
 
 **Certy** is a desktop app for bulk certificate generation from a PNG template and a spreadsheet.
 
