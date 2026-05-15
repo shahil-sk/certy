@@ -7,7 +7,6 @@
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/shahil-sk/certy/build.yml?style=for-the-badge)](https://github.com/shahil-sk/certy/actions)
 [![Latest Release](https://img.shields.io/github/v/release/shahil-sk/certy?style=for-the-badge)](https://github.com/shahil-sk/certy/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/shahil-sk/certy/total?style=for-the-badge)](https://github.com/shahil-sk/certy/releases)
 [![License](https://img.shields.io/github/license/shahil-sk/certy?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.7+-blue?style=for-the-badge&logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-black?style=for-the-badge)](https://github.com/shahil-sk/certy/releases)
