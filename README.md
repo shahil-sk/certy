@@ -90,4 +90,4 @@ If you enjoy the project and want to support future development:
 
 ## License
 
-[MIT](LICENSE)
+[Apache License 2.0](LICENSE)
