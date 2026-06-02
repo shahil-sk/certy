@@ -1,0 +1,49 @@
+{
+  "version": "2.8",
+  "template_path": "template.png",
+  "excel_path": "students.xlsx",
+  "active_sheet": "Students",
+  "color_space": "RGB",
+  "filename_pattern": "{name}_certificate",
+  "positions": {
+    "name": [561.0, 246.14],
+    "course": [561.0, 333.48],
+    "grade": [381.48, 404.94],
+    "date": [740.52, 404.94]
+  },
+  "fields": ["name", "course", "date", "grade"],
+  "field_settings": {
+    "name": {
+      "visible": true, "size": 38, "color": "#B8960C",
+      "font_name": "", "align": "center",
+      "opacity": 100, "shadow": false, "shadow_offset": 4,
+      "outline": false, "outline_width": 2,
+      "field_type": "text", "qr_size": 120, "img_size": 120,
+      "condition_col": "", "condition_val": ""
+    },
+    "course": {
+      "visible": true, "size": 24, "color": "#1A3A5C",
+      "font_name": "", "align": "center",
+      "opacity": 100, "shadow": false, "shadow_offset": 4,
+      "outline": false, "outline_width": 2,
+      "field_type": "text", "qr_size": 120, "img_size": 120,
+      "condition_col": "", "condition_val": ""
+    },
+    "grade": {
+      "visible": true, "size": 20, "color": "#FFFFFF",
+      "font_name": "", "align": "center",
+      "opacity": 100, "shadow": false, "shadow_offset": 4,
+      "outline": false, "outline_width": 2,
+      "field_type": "text", "qr_size": 120, "img_size": 120,
+      "condition_col": "", "condition_val": ""
+    },
+    "date": {
+      "visible": true, "size": 18, "color": "#444030",
+      "font_name": "", "align": "center",
+      "opacity": 100, "shadow": false, "shadow_offset": 4,
+      "outline": false, "outline_width": 2,
+      "field_type": "text", "qr_size": 120, "img_size": 120,
+      "condition_col": "", "condition_val": ""
+    }
+  }
+}
