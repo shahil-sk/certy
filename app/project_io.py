@@ -1,7 +1,6 @@
 """
 Project file save / load (.certy JSON).
-Version 2.5 — paths stored relative to the .certy file so moving the
-              project folder never breaks template or data references.
+Version 2.6  --  adds field_type and qr_size to persisted field settings.
 """
 import json
 import os
@@ -13,8 +12,6 @@ log = get_logger(__name__)
 
 
 def _to_relative(asset_path: str, project_path: str) -> str:
-    """Return asset_path relative to the directory that holds project_path.
-    Falls back to the absolute path if relpath fails (different drive on Windows)."""
     if not asset_path:
         return asset_path
     try:
@@ -24,7 +21,6 @@ def _to_relative(asset_path: str, project_path: str) -> str:
 
 
 def _to_absolute(asset_path: str, project_path: str) -> str:
-    """Resolve a possibly-relative asset_path against the project file directory."""
     if not asset_path:
         return asset_path
     if os.path.isabs(asset_path):
@@ -45,7 +41,7 @@ def serialise(
         except: return default
 
     return {
-        "version":          "2.5",
+        "version":          "2.6",
         "last_modified":    datetime.now().isoformat(),
         "template_path":    _to_relative(template_path, project_path),
         "excel_path":       _to_relative(excel_path,    project_path),
@@ -64,6 +60,8 @@ def serialise(
                 "shadow_offset": _get(font_settings[f].get("shadow_offset"), 4),
                 "outline":       _get(font_settings[f].get("outline"),  False),
                 "outline_width": _get(font_settings[f].get("outline_width"), 2),
+                "field_type":    _get(font_settings[f].get("field_type"), "text"),
+                "qr_size":       _get(font_settings[f].get("qr_size"),  120),
             }
             for f in fields
         },

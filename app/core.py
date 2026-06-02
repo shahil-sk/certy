@@ -27,11 +27,13 @@ from app.ui.canvas_area import CanvasArea
 from app.ui.dialogs import show_preview, pick_color_rgb, pick_color_cmyk
 
 _DEFAULT_ALIGN = "center"
+_DEFAULT_QR_SIZE = 120
 
 
 def _make_field_settings(default_font: str) -> dict:
     """Return a fresh font_settings sub-dict for one field."""
     return {
+        # text rendering
         "size":           tk.IntVar(value=DEFAULT_FONT_SIZE),
         "color":          tk.StringVar(value="#000000"),
         "font_name":      tk.StringVar(value=default_font),
@@ -41,6 +43,9 @@ def _make_field_settings(default_font: str) -> dict:
         "shadow_offset":  tk.IntVar(value=4),
         "outline":        tk.BooleanVar(value=False),
         "outline_width":  tk.IntVar(value=2),
+        # qr rendering
+        "field_type":     tk.StringVar(value="text"),
+        "qr_size":        tk.IntVar(value=_DEFAULT_QR_SIZE),
     }
 
 
@@ -225,7 +230,6 @@ class CertificateApp:
 
         output_format = self._panel.output_format.get()
 
-        # CMYK only makes sense for PDF output; skip the prompt for raster formats.
         if output_format == "PDF":
             use_cmyk = messagebox.askyesno(
                 "Output colour mode",
@@ -234,7 +238,6 @@ class CertificateApp:
                 "  No   \u2192  RGB   (recommended for screen / digital use)")
             self.color_space.set("CMYK" if use_cmyk else "RGB")
         else:
-            # PNG and JPEG are always RGB.
             self.color_space.set("RGB")
 
         out_dir = filedialog.askdirectory(title="Select output folder")
@@ -308,28 +311,25 @@ class CertificateApp:
             self.load_template(data.get("template_path"))
             self.load_excel(data.get("excel_path"))
             self.color_space.set(data.get("color_space", "RGB"))
-            self._panel.filename_pattern.set(
-                data.get("filename_pattern", ""))
+            self._panel.filename_pattern.set(data.get("filename_pattern", ""))
             pos = data.get("positions", {})
             self._canvas_area.set_scaled_positions(pos)
             fs = data.get("field_settings", {})
             for f, settings in fs.items():
                 if f not in self.font_settings: continue
-                self.font_settings[f]["size"].set(settings.get("size", 32))
-                self.font_settings[f]["color"].set(settings.get("color", "#000000"))
+                s = self.font_settings[f]
+                s["size"].set(settings.get("size", 32))
+                s["color"].set(settings.get("color", "#000000"))
                 self.field_vars[f].set(settings.get("visible", True))
-                self.font_settings[f]["font_name"].set(settings.get("font_name", ""))
-                self.font_settings[f]["align"].set(settings.get("align", "center"))
-                if "opacity" in self.font_settings[f]:
-                    self.font_settings[f]["opacity"].set(settings.get("opacity", 100))
-                if "shadow" in self.font_settings[f]:
-                    self.font_settings[f]["shadow"].set(settings.get("shadow", False))
-                if "shadow_offset" in self.font_settings[f]:
-                    self.font_settings[f]["shadow_offset"].set(settings.get("shadow_offset", 4))
-                if "outline" in self.font_settings[f]:
-                    self.font_settings[f]["outline"].set(settings.get("outline", False))
-                if "outline_width" in self.font_settings[f]:
-                    self.font_settings[f]["outline_width"].set(settings.get("outline_width", 2))
+                s["font_name"].set(settings.get("font_name", ""))
+                s["align"].set(settings.get("align", "center"))
+                if "opacity"       in s: s["opacity"].set(settings.get("opacity", 100))
+                if "shadow"        in s: s["shadow"].set(settings.get("shadow", False))
+                if "shadow_offset" in s: s["shadow_offset"].set(settings.get("shadow_offset", 4))
+                if "outline"       in s: s["outline"].set(settings.get("outline", False))
+                if "outline_width" in s: s["outline_width"].set(settings.get("outline_width", 2))
+                if "field_type"    in s: s["field_type"].set(settings.get("field_type", "text"))
+                if "qr_size"       in s: s["qr_size"].set(settings.get("qr_size", _DEFAULT_QR_SIZE))
             self._field_list.rebuild(
                 self.fields, self.field_vars, self.font_settings,
                 list(self.available_fonts.keys()),

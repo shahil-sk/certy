@@ -3,12 +3,14 @@ All PIL drawing operations live here.
 No tkinter widgets are created in this module.
 
 Per-field controls:
-  size, color, font_name, align     -- existing
-  opacity   (0-100 int)             -- new: text layer alpha
-  shadow    (bool)                  -- new: drop shadow
-  shadow_offset (int, px)           -- new: shadow distance
-  outline   (bool)                  -- new: stroke around text
-  outline_width (int, px)           -- new: stroke width
+  size, color, font_name, align     -- text fields
+  opacity   (0-100 int)             -- text layer alpha
+  shadow    (bool)                  -- drop shadow
+  shadow_offset (int, px)           -- shadow distance
+  outline   (bool)                  -- stroke around text
+  outline_width (int, px)           -- stroke width
+  field_type (str: "text" | "qr")   -- render mode
+  qr_size   (int, px)               -- side length of QR image
 """
 import io
 
@@ -38,49 +40,24 @@ def _get(var, default=""):
 
 
 def _draw_text_layer(
-    size_px: int,
-    text: str,
-    font,
-    color_rgb: tuple,
-    opacity: int,
-    shadow: bool,
-    shadow_offset: int,
-    outline: bool,
-    outline_width: int,
-    anchor: str,
-    x: float,
-    y: float,
-    canvas_w: int,
-    canvas_h: int,
-    draw: ImageDraw.ImageDraw,
-    base_img: Image.Image,
-) -> None:
-    """
-    Draw text (with optional shadow / outline / opacity) onto draw/base_img.
-    Uses an RGBA overlay so opacity blends correctly.
-    """
+    size_px, text, font, color_rgb, opacity,
+    shadow, shadow_offset, outline, outline_width,
+    anchor, x, y, canvas_w, canvas_h, base_img,
+):
     r, g, b = color_rgb[:3]
     alpha   = max(0, min(255, int(opacity / 100 * 255)))
 
-    # -- shadow layer
     if shadow and shadow_offset > 0:
         sh_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
         sh_draw  = ImageDraw.Draw(sh_layer)
         sh_draw.text(
-            (x + shadow_offset, y + shadow_offset),
-            text, font=font,
-            fill=(0, 0, 0, min(alpha, 180)),
-            anchor=anchor,
+            (x + shadow_offset, y + shadow_offset), text, font=font,
+            fill=(0, 0, 0, min(alpha, 180)), anchor=anchor,
         )
         sh_layer = sh_layer.filter(
             ImageFilter.GaussianBlur(radius=max(1, shadow_offset // 2)))
-        base_img.paste(
-            Image.new("RGBA", (canvas_w, canvas_h), (0,0,0,0)),
-            mask=sh_layer.split()[3],
-        )
         base_img.alpha_composite(sh_layer)
 
-    # -- outline layer
     if outline and outline_width > 0:
         out_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
         out_draw  = ImageDraw.Draw(out_layer)
@@ -90,33 +67,34 @@ def _draw_text_layer(
                     continue
                 out_draw.text(
                     (x + ox, y + oy), text, font=font,
-                    fill=(0, 0, 0, alpha),
-                    anchor=anchor,
+                    fill=(0, 0, 0, alpha), anchor=anchor,
                 )
         base_img.alpha_composite(out_layer)
 
-    # -- main text layer
     txt_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     txt_draw  = ImageDraw.Draw(txt_layer)
-    txt_draw.text(
-        (x, y), text, font=font,
-        fill=(r, g, b, alpha),
-        anchor=anchor,
-    )
+    txt_draw.text((x, y), text, font=font, fill=(r, g, b, alpha), anchor=anchor)
     base_img.alpha_composite(txt_layer)
 
 
+def _paste_qr(qr_img: Image.Image, x: float, y: float, base_img: Image.Image):
+    """Paste a QR image centred on (x, y) onto base_img."""
+    qw, qh = qr_img.size
+    px = int(x - qw / 2)
+    py = int(y - qh / 2)
+    # Use the alpha channel as a mask so transparent pixels don't clobber the background.
+    if qr_img.mode == "RGBA":
+        base_img.paste(qr_img, (px, py), mask=qr_img.split()[3])
+    else:
+        base_img.paste(qr_img.convert("RGBA"), (px, py))
+
+
 def draw_text_on_image(
-    img: Image.Image,
-    fields: list,
-    field_vars: dict,
-    font_settings: dict,
-    available_fonts: dict,
-    student: dict,
-    positions: dict,
-) -> Image.Image:
-    """Render all visible field text onto img and return it."""
-    img   = img.convert("RGBA")
+    img, fields, field_vars, font_settings,
+    available_fonts, student, positions,
+):
+    """Render all visible fields onto img and return it."""
+    img    = img.convert("RGBA")
     iw, ih = img.size
 
     for field in fields:
@@ -126,33 +104,41 @@ def draw_text_on_image(
         if field not in positions:
             continue
         try:
-            x, y  = positions[field]
-            s     = font_settings[field]
-            size  = _get(s["size"],         32)
-            color = _get(s["color"],         "#000000")
-            fname = _get(s["font_name"],     "")
-            align = _get(s.get("align"),     "center")
-            opac  = _get(s.get("opacity"),   100)
-            shad  = _get(s.get("shadow"),    False)
-            shoff = _get(s.get("shadow_offset"), 4)
-            outl  = _get(s.get("outline"),   False)
-            outw  = _get(s.get("outline_width"), 2)
+            x, y       = positions[field]
+            s          = font_settings[field]
+            field_type = _get(s.get("field_type"), "text")
 
-            font   = resolve_font(available_fonts, fname, size)
-            text   = student.get(field, "")
-            anchor = _ANCHOR.get(align, "mm")
+            if field_type == "qr":
+                from app.qr_renderer import make_qr_image
+                qr_size = max(20, _get(s.get("qr_size"), 120))
+                value   = student.get(field, "")
+                qr_img  = make_qr_image(value, qr_size)
+                _paste_qr(qr_img, x, y, img)
 
-            _draw_text_layer(
-                size_px=size,
-                text=text, font=font,
-                color_rgb=hex_to_rgb(color),
-                opacity=opac,
-                shadow=shad,  shadow_offset=shoff,
-                outline=outl, outline_width=outw,
-                anchor=anchor, x=x, y=y,
-                canvas_w=iw, canvas_h=ih,
-                draw=None, base_img=img,
-            )
+            else:
+                size  = _get(s["size"],         32)
+                color = _get(s["color"],         "#000000")
+                fname = _get(s["font_name"],     "")
+                align = _get(s.get("align"),     "center")
+                opac  = _get(s.get("opacity"),   100)
+                shad  = _get(s.get("shadow"),    False)
+                shoff = _get(s.get("shadow_offset"), 4)
+                outl  = _get(s.get("outline"),   False)
+                outw  = _get(s.get("outline_width"), 2)
+
+                font   = resolve_font(available_fonts, fname, size)
+                text   = student.get(field, "")
+                anchor = _ANCHOR.get(align, "mm")
+
+                _draw_text_layer(
+                    size_px=size, text=text, font=font,
+                    color_rgb=hex_to_rgb(color),
+                    opacity=opac, shadow=shad, shadow_offset=shoff,
+                    outline=outl, outline_width=outw,
+                    anchor=anchor, x=x, y=y,
+                    canvas_w=iw, canvas_h=ih, base_img=img,
+                )
+
         except Exception:
             log.exception("failed to render field '%s'", field)
 
@@ -160,27 +146,26 @@ def draw_text_on_image(
 
 
 def render_placeholder(
-    field: str,
-    font_settings: dict,
-    available_fonts: dict,
-    excel_data: list,
-    scale_x: float,
-    scale_y: float,
-    zoom: float = 1.0,
-) -> Image.Image:
+    field, font_settings, available_fonts, excel_data,
+    scale_x, scale_y, zoom=1.0,
+):
     """
-    Return a PIL Image of the sample text scaled for canvas display.
-
-    The returned image is placed on the canvas with anchor="center", which
-    means the canvas coordinate (x, y) sits exactly at the image midpoint.
-    PIL draws the final text with anchor="mm" (middle of bounding box), so
-    we need the visual center of this preview image to match the bounding-box
-    center of the rendered text -- not the full font ascent/descent box.
-
-    To achieve that we measure the tight bounding box, build an image exactly
-    that size, draw text at its center, then scale it to display size.
+    Return a PIL Image of the sample text (or QR preview) scaled for the canvas.
     """
-    s     = font_settings[field]
+    s          = font_settings[field]
+    field_type = _get(s.get("field_type"), "text")
+
+    if field_type == "qr":
+        from app.qr_renderer import make_qr_image
+        qr_size = max(20, _get(s.get("qr_size"), 120))
+        value   = (excel_data[0].get(field, field) if excel_data else field) or field
+        qr_img  = make_qr_image(value, qr_size)
+        # Scale to display size
+        sw = max(int(qr_size / scale_x * zoom), 1)
+        sh = max(int(qr_size / scale_y * zoom), 1)
+        return qr_img.resize((sw, sh), _LANCZOS)
+
+    # -- text path (unchanged) --
     size  = _get(s["size"],     32)
     color = _get(s["color"],    "#000000")
     fname = _get(s["font_name"], "")
