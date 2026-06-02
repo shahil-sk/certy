@@ -4,9 +4,16 @@ Sample files to get started with Certy quickly.
 
 | File | Description |
 |---|---|
-| `template.png` | A4 landscape certificate template (1122 x 794 px) |
-| `students.xlsx` | 8 sample records with columns: first name, last name, course, date, grade |
+| `template.png` | A4 landscape certificate template |
+| `data.xlsx` | 6 sample records with columns: id, name, HOE, mentor, website, logo |
+| `logo.png` | sample logo (path for this file is mentioned in `data.xlsx` for image loading) |
 | `demo.certy` | Pre-configured project — open with File > Load Project |
+
+> use "filename pattern" field to set custom filename
+>
+> ELSE
+> 
+> first 2 columns will be considerd for file naming
 
 ## Quick start
 
@@ -14,8 +21,4 @@ Sample files to get started with Certy quickly.
 2. File > Load Project > select `demo/demo.certy`
 3. Click **Generate** to produce 8 sample certificates
 
-`use "filename pattern" field to set custom filename`
 
-else
-
-`first 2 columns will be considerd for file naming`
