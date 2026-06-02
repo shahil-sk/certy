@@ -1,49 +1,80 @@
 {
   "version": "2.8",
   "template_path": "template.png",
-  "excel_path": "students.xlsx",
-  "active_sheet": "Students",
-  "color_space": "RGB",
-  "filename_pattern": "{name}_certificate",
+  "excel_path": "data.xlsx",
+  "active_sheet": "Sheet1",
+  "color_space": "CMYK",
+  "filename_pattern": "",
   "positions": {
-    "name": [561.0, 246.14],
-    "course": [561.0, 333.48],
-    "grade": [381.48, 404.94],
-    "date": [740.52, 404.94]
+    "name": [
+      1028.301886792453,
+      669.2933333333333
+    ],
+    "hoe": [
+      515.0943396226415,
+      1050.1306666666667
+    ],
+    "mentor": [
+      1469.811320754717,
+      1052.016
+    ]
   },
-  "fields": ["name", "course", "date", "grade"],
+  "fields": [
+    "name",
+    "hoe",
+    "mentor"
+  ],
   "field_settings": {
     "name": {
-      "visible": true, "size": 38, "color": "#B8960C",
-      "font_name": "", "align": "center",
-      "opacity": 100, "shadow": false, "shadow_offset": 4,
-      "outline": false, "outline_width": 2,
-      "field_type": "text", "qr_size": 120, "img_size": 120,
-      "condition_col": "", "condition_val": ""
+      "visible": true,
+      "size": 75,
+      "color": "#000000",
+      "font_name": "CORBELLI",
+      "align": "center",
+      "opacity": 100,
+      "shadow": true,
+      "shadow_offset": 4,
+      "outline": false,
+      "outline_width": 2,
+      "field_type": "text",
+      "qr_size": 120,
+      "img_size": 120,
+      "condition_col": "e.g. grade",
+      "condition_val": "e.g. A"
     },
-    "course": {
-      "visible": true, "size": 24, "color": "#1A3A5C",
-      "font_name": "", "align": "center",
-      "opacity": 100, "shadow": false, "shadow_offset": 4,
-      "outline": false, "outline_width": 2,
-      "field_type": "text", "qr_size": 120, "img_size": 120,
-      "condition_col": "", "condition_val": ""
+    "hoe": {
+      "visible": true,
+      "size": 65,
+      "color": "#000000",
+      "font_name": "CORBELI",
+      "align": "center",
+      "opacity": 62,
+      "shadow": false,
+      "shadow_offset": 4,
+      "outline": false,
+      "outline_width": 2,
+      "field_type": "text",
+      "qr_size": 120,
+      "img_size": 120,
+      "condition_col": "e.g. grade",
+      "condition_val": "e.g. A"
     },
-    "grade": {
-      "visible": true, "size": 20, "color": "#FFFFFF",
-      "font_name": "", "align": "center",
-      "opacity": 100, "shadow": false, "shadow_offset": 4,
-      "outline": false, "outline_width": 2,
-      "field_type": "text", "qr_size": 120, "img_size": 120,
-      "condition_col": "", "condition_val": ""
-    },
-    "date": {
-      "visible": true, "size": 18, "color": "#444030",
-      "font_name": "", "align": "center",
-      "opacity": 100, "shadow": false, "shadow_offset": 4,
-      "outline": false, "outline_width": 2,
-      "field_type": "text", "qr_size": 120, "img_size": 120,
-      "condition_col": "", "condition_val": ""
+    "mentor": {
+      "visible": true,
+      "size": 65,
+      "color": "#000000",
+      "font_name": "ARIAL",
+      "align": "center",
+      "opacity": 62,
+      "shadow": false,
+      "shadow_offset": 4,
+      "outline": false,
+      "outline_width": 2,
+      "field_type": "text",
+      "qr_size": 120,
+      "img_size": 120,
+      "condition_col": "e.g. grade",
+      "condition_val": "e.g. A"
     }
   }
 }
