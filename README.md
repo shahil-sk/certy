@@ -43,7 +43,8 @@ Load your design, drag fields into position, map your data, and generate a PDF f
 - **Non-blocking UI** — generation runs in a background thread with a live progress bar.
 
 ## Preview
-<img width="1340" height="812" alt="image" src="https://github.com/user-attachments/assets/cdb78bb3-7a6d-43f4-a06d-040b174db056" />
+
+<img width="1492" height="1008" alt="image" src="https://github.com/user-attachments/assets/0fa6b21f-d090-4fa7-b178-cf711e86329d" />
 
 ## Installation
 
@@ -64,15 +65,6 @@ python3 main.py
 
 To add custom fonts, drop `.ttf` or `.otf` files into the `fonts/` folder.
 
-### Optional dependency
-
-QR code fields require one extra package:
-
-```bash
-pip install "qrcode[pil]>=7.4.2"
-```
-
-Without it the app still runs normally — QR fields display a placeholder on the canvas and are skipped during export.
 
 ## How to use it
 
