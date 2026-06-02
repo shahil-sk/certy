@@ -6,25 +6,57 @@
   "color_space": "CMYK",
   "filename_pattern": "",
   "positions": {
+    "id": [
+      1620.754716981132,
+      601.4213333333333
+    ],
     "name": [
-      1013.2075471698113,
+      1009.433962264151,
       695.6879999999999
     ],
     "hoe": [
-      520.7547169811321,
-      1033.1626666666668
+      503.77358490566036,
+      1053.9013333333335
     ],
     "mentor": [
       1477.3584905660377,
       1035.048
+    ],
+    "website": [
+      1622.6415094339623,
+      509.04
+    ],
+    "logo": [
+      1001.8867924528302,
+      1099.1493333333333
     ]
   },
   "fields": [
+    "id",
     "name",
     "hoe",
-    "mentor"
+    "mentor",
+    "website",
+    "logo"
   ],
   "field_settings": {
+    "id": {
+      "visible": true,
+      "size": 32,
+      "color": "#000000",
+      "font_name": "ARIALBI",
+      "align": "center",
+      "opacity": 100,
+      "shadow": false,
+      "shadow_offset": 4,
+      "outline": false,
+      "outline_width": 2,
+      "field_type": "text",
+      "qr_size": 120,
+      "img_size": 120,
+      "condition_col": "",
+      "condition_val": ""
+    },
     "name": {
       "visible": true,
       "size": 56,
@@ -44,6 +76,40 @@
     },
     "hoe": {
       "visible": true,
+      "size": 55,
+      "color": "#000000",
+      "font_name": "ARIAL",
+      "align": "center",
+      "opacity": 100,
+      "shadow": false,
+      "shadow_offset": 4,
+      "outline": false,
+      "outline_width": 2,
+      "field_type": "text",
+      "qr_size": 120,
+      "img_size": 120,
+      "condition_col": "",
+      "condition_val": ""
+    },
+    "mentor": {
+      "visible": true,
+      "size": 55,
+      "color": "#000000",
+      "font_name": "ARIAL",
+      "align": "center",
+      "opacity": 100,
+      "shadow": false,
+      "shadow_offset": 4,
+      "outline": false,
+      "outline_width": 2,
+      "field_type": "text",
+      "qr_size": 120,
+      "img_size": 120,
+      "condition_col": "",
+      "condition_val": ""
+    },
+    "website": {
+      "visible": true,
       "size": 32,
       "color": "#000000",
       "font_name": "ARIAL",
@@ -54,12 +120,12 @@
       "outline": false,
       "outline_width": 2,
       "field_type": "qr",
-      "qr_size": 120,
+      "qr_size": 150,
       "img_size": 120,
       "condition_col": "",
       "condition_val": ""
     },
-    "mentor": {
+    "logo": {
       "visible": true,
       "size": 32,
       "color": "#000000",
@@ -72,7 +138,7 @@
       "outline_width": 2,
       "field_type": "image",
       "qr_size": 120,
-      "img_size": 120,
+      "img_size": 300,
       "condition_col": "",
       "condition_val": ""
     }
