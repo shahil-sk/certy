@@ -12,6 +12,8 @@ from app.constants import (
 )
 from app.ui.widgets import flat_button, hsep
 
+_OUTPUT_FORMATS = ["PDF", "PNG", "JPEG", "WebP"]
+
 
 class ControlPanel(tk.Frame):
 
@@ -24,6 +26,10 @@ class ControlPanel(tk.Frame):
         self.pack(side="left", fill="y", padx=(0, 8), pady=0)
         self.pack_propagate(False)
 
+        # public StringVars that core.py reads and writes
+        self.filename_pattern = tk.StringVar(value="{Name}")
+        self.output_format    = tk.StringVar(value="PDF")
+
         self._build(preview_cmd, generate_cmd)
 
     # ------------------------------------------------------------------
@@ -33,6 +39,70 @@ class ControlPanel(tk.Frame):
 
         self.fields_frame = tk.Frame(self, bg=C["surface2"])
         self.fields_frame.pack(fill="x", padx=PAD_SM, pady=(0, PAD_SM))
+
+        hsep(self, padx=PAD_SM)
+
+        # ---- section: Output settings --------------------------------
+        self._section_header("Output")
+
+        out_card = tk.Frame(self, bg=C["surface2"])
+        out_card.pack(fill="x", padx=PAD_SM, pady=(0, PAD_SM))
+
+        # filename pattern
+        tk.Label(
+            out_card,
+            text="Filename pattern",
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            fg=C["subtext"],
+            bg=C["surface2"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, 2))
+
+        tk.Entry(
+            out_card,
+            textvariable=self.filename_pattern,
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            bg=C["surface"],
+            fg=C["text"],
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=C["border"],
+            highlightcolor=C["accent"],
+            insertbackground=C["text"],
+        ).pack(fill="x", ipady=4, pady=(0, PAD_SM))
+
+        # output format dropdown
+        tk.Label(
+            out_card,
+            text="Output format",
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            fg=C["subtext"],
+            bg=C["surface2"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, 2))
+
+        fmt_row = tk.Frame(out_card, bg=C["surface2"])
+        fmt_row.pack(fill="x", pady=(0, PAD_SM))
+
+        for fmt in _OUTPUT_FORMATS:
+            rb = tk.Radiobutton(
+                fmt_row,
+                text=fmt,
+                variable=self.output_format,
+                value=fmt,
+                bg=C["surface2"],
+                fg=C["text"],
+                selectcolor=C["accent_dim"],
+                activebackground=C["surface2"],
+                activeforeground=C["text"],
+                font=(FONT_FAMILY_UI, FONT_SZ_SM),
+                relief="flat",
+                bd=0,
+                highlightthickness=0,
+                cursor="hand2",
+            )
+            rb.pack(side="left", padx=(0, PAD_SM))
 
         hsep(self, padx=PAD_SM)
 
