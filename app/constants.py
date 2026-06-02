@@ -59,7 +59,7 @@ C = {
 }
 
 APP_TITLE          = "Certy"
-APP_VERSION        = "4.1.0"
+APP_VERSION        = "4.2.0"
 
 CANVAS_MAX_W       = 1100
 CANVAS_MAX_H       = 750
