@@ -64,16 +64,6 @@ python3 main.py
 
 To add custom fonts, drop `.ttf` or `.otf` files into the `fonts/` folder.
 
-### Optional dependency
-
-QR code fields require one extra package:
-
-```bash
-pip install "qrcode[pil]>=7.4.2"
-```
-
-Without it the app still runs normally — QR fields display a placeholder on the canvas and are skipped during export.
-
 ## How to use it
 
 1. **Load template** — select a PNG certificate background.
