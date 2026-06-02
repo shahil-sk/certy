@@ -52,7 +52,6 @@ class CertificateApp:
         self.root.minsize(1020, 680)
         self.root.configure(bg=C["bg"])
 
-        # Centre on first launch at a comfortable default size
         sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
         win_w, win_h = min(1400, sw - 80), min(880, sh - 80)
         x = (sw - win_w) // 2
@@ -83,7 +82,6 @@ class CertificateApp:
             load_template_cmd=self.load_template,
             load_excel_cmd=self.load_excel,
         )
-        # 1 px shadow line beneath the navbar for depth
         tk.Frame(self.root, bg=C["shadow"], height=1).pack(fill="x")
 
         self._status_bar = StatusBar(self.root)
@@ -98,7 +96,6 @@ class CertificateApp:
         self._canvas_area = CanvasArea(body)
 
     def _set_icon(self):
-        # on Windows use the .ico; everywhere else fall back to the .png
         candidates = ("icon.ico", "icon.png")
         for p in map(resource_path, candidates):
             if not os.path.exists(p):
@@ -220,19 +217,31 @@ class CertificateApp:
         if not self.original_image:
             messagebox.showwarning("Certy", "Load a template first."); return
         if not self._gen_lock.acquire(blocking=False):
-            messagebox.showwarning("Certy", "Generation already in progress.\nPlease wait for the current batch to finish."); return
+            messagebox.showwarning(
+                "Certy",
+                "Generation already in progress.\nPlease wait for the current batch to finish."
+            )
+            return
 
-        use_cmyk = messagebox.askyesno(
-            "Output colour mode",
-            "Generate certificates in CMYK colour mode?\n\n"
-            "  Yes  \u2192  CMYK  (recommended for professional printing)\n"
-            "  No   \u2192  RGB   (recommended for screen / digital use)")
-        self.color_space.set("CMYK" if use_cmyk else "RGB")
+        output_format = self._panel.output_format.get()
+
+        # CMYK only makes sense for PDF output; skip the prompt for raster formats.
+        if output_format == "PDF":
+            use_cmyk = messagebox.askyesno(
+                "Output colour mode",
+                "Generate certificates in CMYK colour mode?\n\n"
+                "  Yes  \u2192  CMYK  (recommended for professional printing)\n"
+                "  No   \u2192  RGB   (recommended for screen / digital use)")
+            self.color_space.set("CMYK" if use_cmyk else "RGB")
+        else:
+            # PNG and JPEG are always RGB.
+            self.color_space.set("RGB")
+
         out_dir = filedialog.askdirectory(title="Select output folder")
         if not out_dir:
             self._gen_lock.release(); return
 
-        self._status("Generating certificates\u2026", ok=True)
+        self._status(f"Generating certificates ({output_format})\u2026", ok=True)
         generator.run(
             excel_data=self.excel_data,
             fields=self.fields,
@@ -242,18 +251,22 @@ class CertificateApp:
             original_image=self.original_image,
             positions=self._canvas_area.get_scaled_positions(),
             out_dir=out_dir,
-            color_mode="CMYK" if use_cmyk else "RGB",
+            color_mode=self.color_space.get(),
             filename_pattern=self._panel.filename_pattern.get(),
+            output_format=output_format,
             on_progress=lambda pct: self.root.after(
                 0, lambda v=pct: self._panel.set_progress(v)),
             on_log=lambda msg, clr: self.root.after(
                 0, lambda m=msg, c=clr: self._panel.append_log(m, c)),
             on_done=lambda cnt, tot: self.root.after(
                 0, lambda: (
-                    self._status(f"Done  \u00b7  {cnt} certificate(s) saved to {os.path.basename(out_dir)}/"),
+                    self._status(
+                        f"Done  \u00b7  {cnt} certificate(s) saved to "
+                        f"{os.path.basename(out_dir)}/"),
                     messagebox.showinfo(
                         "Certy \u2014 Done",
-                        f"\u2713  {cnt} certificate(s) generated successfully!\n\nSaved to:\n{out_dir}")
+                        f"\u2713  {cnt} certificate(s) generated successfully!"
+                        f"\n\nFormat: {output_format}\nSaved to:\n{out_dir}")
                 )),
             lock=self._gen_lock,
         )
@@ -263,8 +276,6 @@ class CertificateApp:
         if not self.original_image:
             messagebox.showwarning("Warning", "No template loaded."); return
         try:
-            # Ask for the save path first so we can pass it to serialise
-            # for relative-path calculation.
             path = filedialog.asksaveasfilename(
                 defaultextension=".certy",
                 filetypes=[("Certy Project", "*.certy")])
@@ -293,7 +304,6 @@ class CertificateApp:
             filetypes=[("Certy Project", "*.certy")])
         if not path: return
         try:
-            # project_io.load already resolves relative paths to absolute
             data = project_io.load(path)
             self.load_template(data.get("template_path"))
             self.load_excel(data.get("excel_path"))

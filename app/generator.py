@@ -1,10 +1,11 @@
 """
 Certificate generation worker.
 Runs on a background thread; communicates back via callbacks.
-Features:
-  - PDF output via fpdf
-  - Configurable filename pattern with {field} and {serial} tokens
-  - Duplicate detection (warns before generating)
+
+Supported output formats:
+  PDF   -- vector container wrapping the rendered PNG (default)
+  PNG   -- lossless raster, best for digital sharing
+  JPEG  -- compressed raster, smallest file size
 """
 import io
 import os
@@ -12,7 +13,6 @@ import re
 import threading
 from collections import Counter
 
-from fpdf import FPDF
 from PIL import Image
 
 from app.helpers import px_to_mm, safe_filename
@@ -22,6 +22,9 @@ from app.logger import get_logger
 log = get_logger(__name__)
 
 _TOKEN_RE = re.compile(r"\{(\w+)\}")
+
+# JPEG quality setting (0-95; 85 is a good balance of size vs fidelity)
+_JPEG_QUALITY = 85
 
 
 def _build_filename(pattern: str, student: dict, idx: int, fields: list) -> str:
@@ -55,6 +58,41 @@ def inject_serial(excel_data: list) -> list:
             for i, row in enumerate(excel_data)]
 
 
+def _save_pdf(img: Image.Image, dest: str, pdf_w: float, pdf_h: float) -> None:
+    """Embed the rendered image into a PDF page and write to dest."""
+    from fpdf import FPDF
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    buf.seek(0)
+    pdf = FPDF(unit="mm", format=(pdf_w, pdf_h))
+    pdf.add_page()
+    pdf.image(buf, x=0, y=0, w=pdf_w, h=pdf_h)
+    pdf.output(dest)
+
+
+def _save_png(img: Image.Image, dest: str) -> None:
+    img.save(dest, format="PNG", optimize=True)
+
+
+def _save_jpeg(img: Image.Image, dest: str) -> None:
+    # JPEG does not support an alpha channel, flatten to white background first.
+    if img.mode in ("RGBA", "LA"):
+        bg = Image.new("RGB", img.size, (255, 255, 255))
+        bg.paste(img, mask=img.split()[-1])
+        img = bg
+    else:
+        img = img.convert("RGB")
+    img.save(dest, format="JPEG", quality=_JPEG_QUALITY, optimize=True)
+
+
+# Maps format name -> (file extension, save function)
+_FORMAT_HANDLERS = {
+    "PDF":  (".pdf",  _save_pdf),
+    "PNG":  (".png",  _save_png),
+    "JPEG": (".jpg",  _save_jpeg),
+}
+
+
 def run(
     excel_data: list,
     fields: list,
@@ -70,23 +108,29 @@ def run(
     on_done,
     lock: threading.Lock,
     filename_pattern: str = "",
+    output_format: str = "PDF",
 ) -> None:
-    sub     = color_mode
-    total   = len(excel_data)
-    iw, ih  = original_image.size
-    pdf_w   = px_to_mm(iw)
-    pdf_h   = px_to_mm(ih)
-    out_sub = os.path.join(out_dir, sub)
+    sub      = color_mode
+    total    = len(excel_data)
+    iw, ih   = original_image.size
+    pdf_w    = px_to_mm(iw)
+    pdf_h    = px_to_mm(ih)
+    out_sub  = os.path.join(out_dir, sub)
     os.makedirs(out_sub, exist_ok=True)
 
-    enriched   = inject_serial(excel_data)
+    fmt       = output_format.upper()
+    ext, _    = _FORMAT_HANDLERS.get(fmt, _FORMAT_HANDLERS["PDF"])
+    enriched  = inject_serial(excel_data)
     all_fields = fields + (["serial"] if "serial" not in fields else [])
 
     def _worker():
         count = 0
-        log.info("generation started: %d records, mode=%s, output=%s", total, sub, out_dir)
+        log.info(
+            "generation started: %d records, mode=%s, format=%s, output=%s",
+            total, sub, fmt, out_dir,
+        )
         on_log("Starting generation...", True)
-        on_log(f"Records: {total}   Mode: {sub}   Output: {out_dir}", False)
+        on_log(f"Records: {total}   Mode: {sub}   Format: {fmt}   Output: {out_dir}", False)
         if filename_pattern:
             on_log(f"Filename pattern: {filename_pattern}", False)
 
@@ -108,20 +152,19 @@ def run(
                     all_fields, field_vars, font_settings,
                     available_fonts, student, positions,
                 )
-                buf = io.BytesIO()
-                img.save(buf, format="PNG", optimize=True)
-                buf.seek(0)
-
-                pdf = FPDF(unit="mm", format=(pdf_w, pdf_h))
-                pdf.add_page()
-                pdf.image(buf, x=0, y=0, w=pdf_w, h=pdf_h)
-
                 name = _build_filename(filename_pattern, student, idx, fields)
-                dest = os.path.join(out_sub, f"{name}_certificate.pdf")
-                pdf.output(dest)
+                dest = os.path.join(out_sub, f"{name}_certificate{ext}")
+
+                _, save_fn = _FORMAT_HANDLERS[fmt]
+                if fmt == "PDF":
+                    save_fn(img, dest, pdf_w, pdf_h)
+                else:
+                    save_fn(img, dest)
+
                 count += 1
                 log.debug("[%d/%d] saved %s", idx + 1, total, dest)
-                on_log(f"[{idx+1}/{total}]  {name}_certificate.pdf", False)
+                on_log(f"[{idx+1}/{total}]  {name}_certificate{ext}", False)
+
             except Exception:
                 log.exception("failed to generate certificate %d", idx + 1)
                 on_log(f"[error]  cert {idx+1}: see certy.log for details", False)
@@ -130,7 +173,10 @@ def run(
 
         on_log("-" * 44, False)
         on_log(f"Done  {count}/{total} certificates saved.", False)
-        log.info("generation finished: %d/%d certificates saved to %s", count, total, out_sub)
+        log.info(
+            "generation finished: %d/%d saved to %s",
+            count, total, out_sub,
+        )
         on_done(count, total)
         lock.release()
 

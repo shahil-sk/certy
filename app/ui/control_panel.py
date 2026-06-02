@@ -7,6 +7,9 @@ from tkinter import ttk
 from app.constants import C, SIDEBAR_W
 from app.ui.widgets import label, hsep
 
+# Supported output formats; first entry is the default.
+_OUTPUT_FORMATS = ["PDF", "PNG", "JPEG"]
+
 
 class ControlPanel(tk.Frame):
     """
@@ -15,6 +18,7 @@ class ControlPanel(tk.Frame):
       self.progress          -- ttk.Progressbar
       self.info_text         -- tk.Text log
       self.filename_pattern  -- tk.StringVar  (e.g. "{name}_{date}")
+      self.output_format     -- tk.StringVar  ("PDF" | "PNG" | "JPEG")
     """
 
     def __init__(self, parent, preview_cmd, generate_cmd):
@@ -28,6 +32,7 @@ class ControlPanel(tk.Frame):
         self.pack(side="left", fill="y", padx=(0, 10), pady=6)
         self.pack_propagate(False)
         self.filename_pattern = tk.StringVar(value="")
+        self.output_format    = tk.StringVar(value=_OUTPUT_FORMATS[0])
         self._build(preview_cmd, generate_cmd)
 
     # ------------------------------------------------------------------
@@ -35,7 +40,7 @@ class ControlPanel(tk.Frame):
         # ── Header
         hdr = tk.Frame(self, bg=C["surface"], pady=12)
         hdr.pack(fill="x", padx=16)
-        tk.Label(hdr, text="▣  Fields",
+        tk.Label(hdr, text="\u25a3  Fields",
                  font=("Segoe UI", 10, "bold"),
                  fg=C["text"], bg=C["surface"]).pack(side="left")
         hsep(self, padx=0, pady=0)
@@ -51,7 +56,7 @@ class ControlPanel(tk.Frame):
         fn_wrap.pack(fill="x", padx=14)
         fn_top = tk.Frame(fn_wrap, bg=C["surface"])
         fn_top.pack(fill="x", pady=(0, 4))
-        tk.Label(fn_top, text="📄  Filename pattern",
+        tk.Label(fn_top, text="\U0001f4c4  Filename pattern",
                  font=("Segoe UI", 8, "bold"),
                  fg=C["subtext"], bg=C["surface"]).pack(side="left")
         tk.Label(fn_top, text="e.g. {name}_{date}",
@@ -70,12 +75,37 @@ class ControlPanel(tk.Frame):
 
         hsep(self, padx=0, pady=0)
 
+        # ── Output format selector
+        fmt_wrap = tk.Frame(self, bg=C["surface"], pady=8)
+        fmt_wrap.pack(fill="x", padx=14)
+        tk.Label(fmt_wrap, text="\U0001f5c2  Output format",
+                 font=("Segoe UI", 8, "bold"),
+                 fg=C["subtext"], bg=C["surface"]).pack(anchor="w", pady=(0, 5))
+
+        btn_row = tk.Frame(fmt_wrap, bg=C["surface"])
+        btn_row.pack(fill="x")
+        self._fmt_buttons = {}
+        for fmt in _OUTPUT_FORMATS:
+            btn = tk.Button(
+                btn_row, text=fmt,
+                font=("Segoe UI", 8, "bold"),
+                relief="flat", bd=0, cursor="hand2",
+                padx=10, pady=5,
+                command=lambda f=fmt: self._select_format(f),
+            )
+            btn.pack(side="left", expand=True, fill="x", padx=(0, 4))
+            self._fmt_buttons[fmt] = btn
+        # Highlight the default selection
+        self._select_format(_OUTPUT_FORMATS[0])
+
+        hsep(self, padx=0, pady=0)
+
         # ── Action buttons
         btn_area = tk.Frame(self, bg=C["surface"], pady=10)
         btn_area.pack(fill="x", padx=14)
 
         tk.Button(
-            btn_area, text="▶  Preview", command=preview_cmd,
+            btn_area, text="\u25b6  Preview", command=preview_cmd,
             bg=C["surface2"], fg=C["success"],
             relief="flat", cursor="hand2",
             font=("Segoe UI", 9, "bold"),
@@ -87,7 +117,7 @@ class ControlPanel(tk.Frame):
         ).pack(side="left", fill="x", expand=True, padx=(0, 6))
 
         tk.Button(
-            btn_area, text="⚡  Generate", command=generate_cmd,
+            btn_area, text="\u26a1  Generate", command=generate_cmd,
             bg=C["accent"], fg=C["white"],
             relief="flat", cursor="hand2",
             font=("Segoe UI", 9, "bold"),
@@ -111,7 +141,7 @@ class ControlPanel(tk.Frame):
         # ── Log header
         log_hdr = tk.Frame(self, bg=C["surface"], pady=8)
         log_hdr.pack(fill="x", padx=14)
-        tk.Label(log_hdr, text="⧉  Log",
+        tk.Label(log_hdr, text="\u29c9  Log",
                  font=("Segoe UI", 8, "bold"),
                  fg=C["subtext"], bg=C["surface"]).pack(side="left")
         tk.Button(
@@ -151,6 +181,18 @@ class ControlPanel(tk.Frame):
         self.info_text.tag_configure("warn", foreground=C["warning"])
 
     # ------------------------------------------------------------------
+    def _select_format(self, fmt: str) -> None:
+        """Update the format var and re-style all format buttons."""
+        self.output_format.set(fmt)
+        for name, btn in self._fmt_buttons.items():
+            active = name == fmt
+            btn.configure(
+                bg=C["accent"]    if active else C["surface2"],
+                fg=C["white"]     if active else C["subtext"],
+                activebackground=C["accent2"] if active else C["surface3"],
+                activeforeground=C["white"]   if active else C["text"],
+            )
+
     def append_log(self, msg: str, clear: bool = False) -> None:
         self.info_text.configure(state="normal")
         if clear:
