@@ -44,7 +44,8 @@ Load your design, drag fields into position, map your data, and generate a PDF f
 
 ## Preview
 
-<img width="1492" height="1008" alt="image" src="https://github.com/user-attachments/assets/0fa6b21f-d090-4fa7-b178-cf711e86329d" />
+<img width="1492" height="1008" alt="image" src="https://github.com/user-attachments/assets/01fe84f9-ebcc-4745-9aef-af6df46b8cc1" />
+
 
 ## Installation
 
