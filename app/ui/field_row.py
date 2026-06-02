@@ -12,7 +12,7 @@ Each card also has an optional condition row:
 import tkinter as tk
 from tkinter import ttk
 
-from app.constants import C
+from app.constants import C, FONT_FAMILY_UI, FONT_SZ_SM
 from app.ui.widgets import label
 
 _ALIGN_OPTIONS = [("L", "left"), ("C", "center"), ("R", "right")]
@@ -21,7 +21,7 @@ _ALIGN_OPTIONS = [("L", "left"), ("C", "center"), ("R", "right")]
 class FieldList(tk.Frame):
 
     def __init__(self, parent):
-        super().__init__(parent, bg=C["surface"])
+        super().__init__(parent, bg=C["surface2"])
         self.pack(fill="x")
 
     def rebuild(self, fields, field_vars, font_settings,
@@ -29,10 +29,10 @@ class FieldList(tk.Frame):
         for w in self.winfo_children():
             w.destroy()
 
-        cv  = tk.Canvas(self, height=360, bg=C["surface"], highlightthickness=0)
+        cv  = tk.Canvas(self, height=360, bg=C["surface2"], highlightthickness=0)
         vsb = ttk.Scrollbar(self, orient="vertical", command=cv.yview,
                             style="Dark.Vertical.TScrollbar")
-        inner = tk.Frame(cv, bg=C["surface"])
+        inner = tk.Frame(cv, bg=C["surface2"])
         inner.bind("<Configure>",
                    lambda e: cv.configure(scrollregion=cv.bbox("all")))
         cv.create_window((0, 0), window=inner, anchor="nw")
@@ -56,16 +56,18 @@ class _FieldCard(tk.Frame):
 
     def __init__(self, parent, field, field_vars, font_settings,
                  available_fonts, update_cb, color_cb, alt=False):
+        # alternate rows: very subtle warm tint, no heavy stripe
         bg = C["row_alt"] if alt else C["surface"]
         super().__init__(parent, bg=bg)
         self.pack(fill="x")
+        # single 1px bottom separator
         tk.Frame(self, bg=C["border"], height=1).pack(fill="x", side="bottom")
         self._build(field, field_vars, font_settings,
                     available_fonts, update_cb, color_cb, bg)
 
     def _build(self, field, field_vars, font_settings,
                available_fonts, update_cb, color_cb, bg):
-        pad = tk.Frame(self, bg=bg, padx=12, pady=8)
+        pad = tk.Frame(self, bg=bg, padx=10, pady=8)
         pad.pack(fill="x")
 
         s = font_settings[field]
@@ -73,43 +75,53 @@ class _FieldCard(tk.Frame):
         # -- Row 1: field name + mode toggles + visible toggle ---------------
         r1 = tk.Frame(pad, bg=bg)
         r1.pack(fill="x", pady=(0, 5))
-        tk.Label(r1, text=field.upper(), font=("Segoe UI", 7, "bold"),
-                 fg=C["accent"], bg=bg).pack(side="left")
+
+        # field name label -- warm teal, uppercase, small
+        tk.Label(
+            r1, text=field.upper(),
+            font=(FONT_FAMILY_UI, 8, "bold"),
+            fg=C["accent"], bg=bg,
+        ).pack(side="left")
 
         # Visible toggle (rightmost)
         vis_frame = tk.Frame(r1, bg=bg)
         vis_frame.pack(side="right")
-        tk.Label(vis_frame, text="show", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left", padx=(0, 3))
-        _ToggleSwitch(vis_frame, field_vars[field],
-                      lambda f=field: update_cb(f), bg=bg).pack(side="left")
+        tk.Label(
+            vis_frame, text="show",
+            font=(FONT_FAMILY_UI, 7),
+            fg=C["muted"], bg=bg,
+        ).pack(side="left", padx=(0, 3))
+        _ToggleSwitch(
+            vis_frame, field_vars[field],
+            lambda f=field: update_cb(f), bg=bg,
+        ).pack(side="left")
 
-        # Mode toggle buttons (QR + IMG, left of visible toggle)
+        # Mode toggle buttons
         mode_frame = tk.Frame(r1, bg=bg)
         mode_frame.pack(side="right", padx=(0, 8))
 
         ft_var   = s.get("field_type")
         cur_type = ft_var.get() if ft_var else "text"
 
-        def _btn(text, mode):
+        def _mode_btn(text, mode):
             active = cur_type == mode
             b = tk.Button(
                 mode_frame, text=text,
-                font=("Segoe UI", 7, "bold"),
+                font=(FONT_FAMILY_UI, 7, "bold"),
                 relief="flat", bd=0, cursor="hand2",
-                padx=5, pady=2,
-                bg=C["accent"]  if active else C["btn_idle"],
-                fg=C["white"]   if active else C["subtext"],
+                padx=6, pady=2,
+                bg=C["accent"]      if active else C["btn_idle"],
+                fg=C["text_inv"]    if active else C["subtext"],
                 activebackground=C["accent2"],
-                activeforeground=C["white"],
+                activeforeground=C["text_inv"],
             )
             b.pack(side="left", padx=(0, 2))
             return b
 
-        qr_btn  = _btn("QR",  "qr")
-        img_btn = _btn("IMG", "image")
+        qr_btn  = _mode_btn("QR",  "qr")
+        img_btn = _mode_btn("IMG", "image")
 
-        # -- Mode-specific control frames ------------------------------------
+        # -- Mode-specific frames --------------------------------------------
         text_frame = tk.Frame(pad, bg=bg)
         text_frame.pack(fill="x")
         self._build_text_controls(
@@ -117,19 +129,15 @@ class _FieldCard(tk.Frame):
 
         qr_frame = tk.Frame(pad, bg=bg)
         self._build_size_controls(
-            qr_frame, field, s, "qr_size", "QR size (px)",
-            40, 600, update_cb, bg)
+            qr_frame, field, s, "qr_size", "QR size (px)", 40, 600, update_cb, bg)
 
         img_frame = tk.Frame(pad, bg=bg)
         self._build_size_controls(
-            img_frame, field, s, "img_size", "Image size (px)",
-            20, 800, update_cb, bg)
+            img_frame, field, s, "img_size", "Image size (px)", 20, 800, update_cb, bg)
         self._build_opacity_row(img_frame, field, s, update_cb, bg)
 
-        # Condition row is shared across all field types
         self._build_condition_row(pad, field, s, update_cb, bg)
 
-        # Map mode -> its frame
         _frames = {"text": text_frame, "qr": qr_frame, "image": img_frame}
 
         def _show_mode(mode):
@@ -149,8 +157,8 @@ class _FieldCard(tk.Frame):
             for btn, mode in ((qr_btn, "qr"), (img_btn, "image")):
                 active = new_type == mode
                 btn.config(
-                    bg=C["accent"] if active else C["btn_idle"],
-                    fg=C["white"]  if active else C["subtext"],
+                    bg=C["accent"]      if active else C["btn_idle"],
+                    fg=C["text_inv"]    if active else C["subtext"],
                 )
             update_cb(f)
 
@@ -159,14 +167,6 @@ class _FieldCard(tk.Frame):
 
     # ------------------------------------------------------------------
     def _build_condition_row(self, parent, field, s, update_cb, bg):
-        """
-        Collapsible row that lets the user write an "if col == val" rule.
-        When condition_col is empty the field always renders (default).
-
-        Important: the Entry widgets do NOT use textvariable= because we show
-        placeholder hint text that must never be written into the StringVar.
-        The var is only updated on Return / FocusOut when the content is real.
-        """
         col_var = s.get("condition_col")
         val_var = s.get("condition_val")
         if col_var is None or val_var is None:
@@ -184,43 +184,39 @@ class _FieldCard(tk.Frame):
         toggle_btn = tk.Button(
             header_row,
             text="\u2713 if..." if has_condition else "if...",
-            font=("Segoe UI", 7),
+            font=(FONT_FAMILY_UI, 7),
             relief="flat", bd=0, cursor="hand2",
             padx=5, pady=1,
-            bg=C["btn_active"] if has_condition else C["btn_idle"],
-            fg=C["white"]      if has_condition else C["subtext"],
+            bg=C["accent"]    if has_condition else C["btn_idle"],
+            fg=C["text_inv"]  if has_condition else C["subtext"],
             activebackground=C["accent2"],
-            activeforeground=C["white"],
+            activeforeground=C["text_inv"],
         )
         toggle_btn.pack(side="left")
 
         tk.Label(
             header_row,
             text="show only when column = value",
-            font=("Segoe UI", 6), fg=C["muted"], bg=bg,
+            font=(FONT_FAMILY_UI, 6), fg=C["muted"], bg=bg,
         ).pack(side="left", padx=(5, 0))
 
         HINT_COL = "e.g. grade"
         HINT_VAL = "e.g. A"
 
-        # Detail row: two plain Entry widgets (no textvariable)
         entry_row = tk.Frame(detail, bg=bg)
         entry_row.pack(fill="x", pady=(3, 0))
 
         def _make_hint_entry(parent_frame, var, hint, width=9):
-            """
-            Entry that shows a greyed-out hint when empty.
-            Actual value is only written to var on Return / FocusOut so the
-            hint string can never accidentally pollute the condition check.
-            """
             e = tk.Entry(
                 parent_frame,
                 width=width,
-                font=("Segoe UI", 8),
+                font=(FONT_FAMILY_UI, 8),
                 bg=C["surface3"], fg=C["text"],
                 insertbackground=C["accent"],
                 relief="flat", bd=0,
-                highlightthickness=1, highlightbackground=C["border"],
+                highlightthickness=1,
+                highlightbackground=C["border"],
+                highlightcolor=C["accent"],
             )
 
             def _show_hint():
@@ -246,7 +242,6 @@ class _FieldCard(tk.Frame):
             e.bind("<FocusOut>", _on_focus_out)
             e.bind("<Return>",   lambda _ev: _on_focus_out(_ev))
 
-            # Initialise: show real value from var or the hint
             real = var.get().strip()
             if real:
                 e.insert(0, real)
@@ -260,20 +255,23 @@ class _FieldCard(tk.Frame):
             active = bool(col_var.get().strip())
             toggle_btn.config(
                 text="\u2713 if..." if active else "if...",
-                bg=C["btn_active"] if active else C["btn_idle"],
-                fg=C["white"]      if active else C["subtext"],
+                bg=C["accent"]    if active else C["btn_idle"],
+                fg=C["text_inv"]  if active else C["subtext"],
             )
 
         col_var.trace_add("write", _refresh_toggle)
 
-        tk.Label(entry_row, text="col", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left")
+        tk.Label(
+            entry_row, text="col",
+            font=(FONT_FAMILY_UI, 7), fg=C["subtext"], bg=bg,
+        ).pack(side="left")
         _make_hint_entry(entry_row, col_var, HINT_COL).pack(side="left", padx=(3, 4))
-        tk.Label(entry_row, text="=", font=("Segoe UI", 8, "bold"),
-                 fg=C["subtext"], bg=bg).pack(side="left")
+        tk.Label(
+            entry_row, text="=",
+            font=(FONT_FAMILY_UI, 8, "bold"), fg=C["subtext"], bg=bg,
+        ).pack(side="left")
         _make_hint_entry(entry_row, val_var, HINT_VAL).pack(side="left", padx=(4, 0))
 
-        # Show/hide detail on toggle
         _shown = [has_condition]
 
         def _toggle_detail():
@@ -295,23 +293,28 @@ class _FieldCard(tk.Frame):
         # Row 2: size + font
         r2 = tk.Frame(parent, bg=bg)
         r2.pack(fill="x", pady=(0, 4))
-        tk.Label(r2, text="Sz", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left")
+        tk.Label(
+            r2, text="Sz",
+            font=(FONT_FAMILY_UI, 7), fg=C["subtext"], bg=bg,
+        ).pack(side="left")
         spin = tk.Spinbox(
             r2, from_=6, to=300, width=4,
             textvariable=s["size"],
-            font=("Segoe UI", 8),
+            font=(FONT_FAMILY_UI, 8),
             bg=C["surface3"], fg=C["text"],
             buttonbackground=C["surface3"],
             insertbackground=C["text"],
             relief="flat", bd=0,
             highlightthickness=1, highlightbackground=C["border"],
+            highlightcolor=C["accent"],
             command=lambda f=field: update_cb(f),
         )
         spin.bind("<Return>", lambda e, f=field: update_cb(f))
         spin.pack(side="left", padx=(3, 8))
-        tk.Label(r2, text="Font", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left")
+        tk.Label(
+            r2, text="Font",
+            font=(FONT_FAMILY_UI, 7), fg=C["subtext"], bg=bg,
+        ).pack(side="left")
         cb = ttk.Combobox(
             r2, values=available_fonts,
             textvariable=s["font_name"],
@@ -320,32 +323,36 @@ class _FieldCard(tk.Frame):
         cb.bind("<<ComboboxSelected>>", lambda e, f=field: update_cb(f))
         cb.pack(side="left", padx=(3, 0))
 
-        # Row 3: colour + alignment
+        # Row 3: colour swatch + alignment pills
         r3 = tk.Frame(parent, bg=bg)
         r3.pack(fill="x", pady=(0, 4))
         swatch = tk.Button(
             r3, width=3, height=1,
             bg=s["color"].get(),
             relief="flat", bd=0, cursor="hand2",
-            highlightthickness=2, highlightbackground=C["border"],
+            highlightthickness=1, highlightbackground=C["border"],
             command=lambda f=field: color_cb(f),
         )
         swatch.pack(side="left", padx=(0, 5))
         s["_swatch"] = swatch
-        tk.Label(r3, text="Color", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left", padx=(0, 8))
+        tk.Label(
+            r3, text="Color",
+            font=(FONT_FAMILY_UI, 7), fg=C["subtext"], bg=bg,
+        ).pack(side="left", padx=(0, 8))
 
-        tk.Label(r3, text="Align", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left", padx=(0, 3))
-        align_var = s["align"]
-        pill_refs = {}
+        tk.Label(
+            r3, text="Align",
+            font=(FONT_FAMILY_UI, 7), fg=C["subtext"], bg=bg,
+        ).pack(side="left", padx=(0, 3))
+        align_var  = s["align"]
+        pill_refs  = {}
 
         def _set_align(val, f=field):
             align_var.set(val)
             for v, b in pill_refs.items():
                 b.config(
-                    bg=C["btn_active"] if v == val else C["btn_idle"],
-                    fg=C["white"]      if v == val else C["subtext"],
+                    bg=C["accent"]    if v == val else C["btn_idle"],
+                    fg=C["text_inv"]  if v == val else C["subtext"],
                 )
             update_cb(f)
 
@@ -354,12 +361,12 @@ class _FieldCard(tk.Frame):
             b = tk.Button(
                 r3, text=sym,
                 command=lambda v=val: _set_align(v),
-                bg=C["btn_active"] if active else C["btn_idle"],
-                fg=C["white"]      if active else C["subtext"],
-                font=("Segoe UI", 8, "bold"),
+                bg=C["accent"]    if active else C["btn_idle"],
+                fg=C["text_inv"]  if active else C["subtext"],
+                font=(FONT_FAMILY_UI, 8, "bold"),
                 relief="flat", bd=0, cursor="hand2",
                 activebackground=C["accent2"],
-                activeforeground=C["white"],
+                activeforeground=C["text_inv"],
                 width=2, pady=1,
             )
             b.pack(side="left", padx=(0, 2))
@@ -372,46 +379,43 @@ class _FieldCard(tk.Frame):
         r5 = tk.Frame(parent, bg=bg)
         r5.pack(fill="x")
 
-        def _toggle_btn(p, label_text, var, f):
+        def _toggle_btn(p, lbl_text, var, f):
             def _toggle():
                 var.set(not var.get())
                 b.config(
-                    bg=C["btn_active"] if var.get() else C["btn_idle"],
-                    fg=C["white"]      if var.get() else C["subtext"],
+                    bg=C["accent"]    if var.get() else C["btn_idle"],
+                    fg=C["text_inv"]  if var.get() else C["subtext"],
                 )
                 update_cb(f)
             b = tk.Button(
-                p, text=label_text, command=_toggle,
-                bg=C["btn_active"] if var.get() else C["btn_idle"],
-                fg=C["white"]      if var.get() else C["subtext"],
-                font=("Segoe UI", 7),
+                p, text=lbl_text, command=_toggle,
+                bg=C["accent"]    if var.get() else C["btn_idle"],
+                fg=C["text_inv"]  if var.get() else C["subtext"],
+                font=(FONT_FAMILY_UI, 7),
                 relief="flat", bd=0, cursor="hand2",
                 activebackground=C["accent2"],
-                activeforeground=C["white"],
+                activeforeground=C["text_inv"],
                 padx=6, pady=2,
             )
             b.pack(side="left", padx=(0, 4))
             return b
 
         _toggle_btn(r5, "Shadow",  s["shadow"],  field)
-        tk.Label(r5, text="off", font=("Segoe UI", 6),
-                 fg=C["muted"], bg=bg).pack(side="left", padx=(0, 8))
         _toggle_btn(r5, "Outline", s["outline"], field)
-        tk.Label(r5, text="off", font=("Segoe UI", 6),
-                 fg=C["muted"], bg=bg).pack(side="left")
 
     # ------------------------------------------------------------------
     def _build_size_controls(self, parent, field, s, key, label_text,
                              min_val, max_val, update_cb, bg):
-        """Generic size spinner row used for both QR and image modes."""
         row = tk.Frame(parent, bg=bg)
         row.pack(fill="x", pady=(2, 2))
-        tk.Label(row, text=label_text, font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left")
+        tk.Label(
+            row, text=label_text,
+            font=(FONT_FAMILY_UI, 7), fg=C["subtext"], bg=bg,
+        ).pack(side="left")
         spin = tk.Spinbox(
             row, from_=min_val, to=max_val, width=5,
             textvariable=s.get(key),
-            font=("Segoe UI", 8),
+            font=(FONT_FAMILY_UI, 8),
             bg=C["surface3"], fg=C["text"],
             buttonbackground=C["surface3"],
             insertbackground=C["text"],
@@ -421,21 +425,23 @@ class _FieldCard(tk.Frame):
         )
         spin.bind("<Return>", lambda e, f=field: update_cb(f))
         spin.pack(side="left", padx=(6, 0))
-        hint = "Value taken from data column at runtime."
         tk.Label(
-            parent, text=hint,
-            font=("Segoe UI", 6), fg=C["muted"], bg=bg,
+            parent, text="Value taken from data column at runtime.",
+            font=(FONT_FAMILY_UI, 6), fg=C["muted"], bg=bg,
             wraplength=240, justify="left",
         ).pack(anchor="w", pady=(0, 4))
 
     def _build_opacity_row(self, parent, field, s, update_cb, bg):
-        """Shared opacity slider (used by text and image modes)."""
         r = tk.Frame(parent, bg=bg)
         r.pack(fill="x", pady=(0, 4))
-        tk.Label(r, text="Opacity", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left")
-        lbl = tk.Label(r, text="100%", font=("Segoe UI", 7),
-                       fg=C["text"], bg=bg, width=4)
+        tk.Label(
+            r, text="Opacity",
+            font=(FONT_FAMILY_UI, 7), fg=C["subtext"], bg=bg,
+        ).pack(side="left")
+        lbl = tk.Label(
+            r, text="100%",
+            font=(FONT_FAMILY_UI, 7), fg=C["text"], bg=bg, width=4,
+        )
         lbl.pack(side="right")
 
         def _changed(val, f=field):
@@ -448,6 +454,7 @@ class _FieldCard(tk.Frame):
             command=_changed,
             bg=bg, fg=C["text"],
             troughcolor=C["surface3"],
+            activebackground=C["accent_dim"],
             highlightthickness=0, relief="flat",
             showvalue=False, length=140,
         ).pack(side="left", padx=(4, 0), fill="x", expand=True)
@@ -455,11 +462,14 @@ class _FieldCard(tk.Frame):
 
 # ---------------------------------------------------------------------------
 class _ToggleSwitch(tk.Canvas):
+    """Minimal pill toggle switch."""
     W, H, R = 32, 16, 8
 
-    def __init__(self, parent, var, command, bg="#ffffff"):
-        super().__init__(parent, width=self.W, height=self.H,
-                         bg=bg, highlightthickness=0, cursor="hand2")
+    def __init__(self, parent, var, command, bg=None):
+        super().__init__(
+            parent, width=self.W, height=self.H,
+            bg=bg or C["surface"], highlightthickness=0, cursor="hand2",
+        )
         self._var = var
         self._cmd = command
         self.bind("<Button-1>", self._toggle)
@@ -472,8 +482,11 @@ class _ToggleSwitch(tk.Canvas):
         track = C["accent"] if on else C["surface3"]
         self._rounded_rect(0, 0, self.W, self.H, self.R, fill=track)
         kx = self.W - self.R - 2 if on else self.R + 2
-        self.create_oval(kx - 5, self.H // 2 - 5, kx + 5, self.H // 2 + 5,
-                         fill=C["white"], outline="")
+        self.create_oval(
+            kx - 5, self.H // 2 - 5,
+            kx + 5, self.H // 2 + 5,
+            fill=C["white"], outline="",
+        )
 
     def _rounded_rect(self, x1, y1, x2, y2, r, **kw):
         self.create_arc(x1,      y1,      x1+2*r, y1+2*r, start=90,  extent=90,  style="pieslice", outline="", **kw)

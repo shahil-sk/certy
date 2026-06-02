@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certy — UI Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #f4f3f0;
+  --surface:    #faf9f7;
+  --surface2:   #f0efe9;
+  --surface3:   #e8e6df;
+  --nav:        #1c1b18;
+  --canvas-bg:  #e9e7e0;
+  --accent:     #1a7a5e;
+  --accent2:    #0f6249;
+  --accent-dim: #d3ece6;
+  --accent-txt: #ffffff;
+  --danger:     #c0392b;
+  --danger-dim: #fae5e3;
+  --success:    #1e7a45;
+  --success-dim:#ddf0e6;
+  --warning:    #b45309;
+  --warning-dim:#fef3cd;
+  --text:       #1a1917;
+  --subtext:    #6b6860;
+  --muted:      #a8a5a0;
+  --text-inv:   #ffffff;
+  --border:     rgba(26,25,23,0.10);
+  --border-md:  rgba(26,25,23,0.14);
+  --row-alt:    #f6f5f1;
+  --btn-idle:   #eeece7;
+  --btn-active: #1a7a5e;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:  0 3px 12px rgba(0,0,0,0.10);
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --font: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --nav-w: 210px;
+  --sidebar-w: 300px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;height:100vh;overflow:hidden}
+.nav{width:var(--nav-w);background:var(--nav);display:flex;flex-direction:column;flex-shrink:0}
+.nav-logo{display:flex;align-items:center;gap:10px;padding:18px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.logo-mark{width:28px;height:28px;background:var(--accent);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-title{font-size:14px;font-weight:600;color:#f4f3f0;letter-spacing:.01em}
+.nav-version{font-size:10px;color:rgba(255,255,255,.28);margin-top:1px;font-family:var(--mono)}
+.nav-section{padding:20px 14px 6px;font-size:9px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:rgba(255,255,255,.25)}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:var(--r-sm);margin:1px 8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12.5px;transition:background 120ms,color 120ms;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(26,122,94,.22);color:#5ecba1;font-weight:500}
+.nav-icon{width:15px;height:15px;opacity:.7;flex-shrink:0}
+.nav-item.active .nav-icon{opacity:1}
+.nav-bottom{margin-top:auto;padding:12px 8px;border-top:1px solid rgba(255,255,255,.06)}
+.main{flex:1;display:flex;overflow:hidden}
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:0 14px;height:44px;flex-shrink:0}
+.tool-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r-sm);border:none;cursor:pointer;font-family:var(--font);font-size:12px;font-weight:500;background:var(--btn-idle);color:var(--subtext);transition:background 120ms,color 120ms;white-space:nowrap}
+.tool-btn:hover{background:var(--surface3);color:var(--text)}
+.tool-btn.primary{background:var(--accent);color:var(--accent-txt)}
+.tool-btn.primary:hover{background:var(--accent2)}
+.tool-btn svg{width:13px;height:13px;flex-shrink:0}
+.tool-sep{width:1px;height:20px;background:var(--border);margin:0 2px}
+.tool-spacer{flex:1}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:var(--r-sm);font-size:10px;font-weight:500;font-family:var(--mono)}
+.badge-success{background:var(--success-dim);color:var(--success)}
+.workarea{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.canvas-wrap{flex:1;background:var(--canvas-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.canvas-wrap::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(26,25,23,.12) 1px,transparent 1px);background-size:20px 20px;pointer-events:none}
+.certificate-card{background:#fff;border-radius:var(--r-md);box-shadow:0 2px 12px rgba(0,0,0,.10),0 0 0 1px rgba(0,0,0,.05);width:520px;height:368px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;user-select:none}
+.cert-top-bar{position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--accent),#2dd4bf)}
+.cert-label{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.cert-title{font-size:22px;font-weight:300;color:#1a1917;letter-spacing:-.01em}
+.cert-name{font-size:28px;font-weight:600;color:var(--accent);letter-spacing:-.02em;margin:4px 0}
+.cert-divider{width:48px;height:1px;background:var(--border-md);margin:4px 0}
+.cert-meta{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.field-handle{position:absolute;border:1.5px dashed var(--accent);border-radius:3px;background:rgba(26,122,94,.04);cursor:move}
+.field-handle.active{background:rgba(26,122,94,.08)}
+.statusbar{background:var(--surface);border-top:1px solid var(--border);padding:5px 14px;display:flex;align-items:center;gap:12px;font-size:10px;color:var(--muted);font-family:var(--mono)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--success);flex-shrink:0}
+.status-spacer{flex:1}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 2px}
+.stab{flex:1;padding:10px 0;text-align:center;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color 120ms,border-color 120ms;user-select:none}
+.stab:hover{color:var(--subtext)}
+.stab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:10px 0}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+.field-card{padding:10px 14px;border-bottom:1px solid var(--border)}
+.field-card:nth-child(even){background:var(--row-alt)}
+.field-header{display:flex;align-items:center;margin-bottom:8px}
+.field-name{font-size:9px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:var(--accent);flex:1}
+.toggle-pill{display:flex;background:var(--btn-idle);border-radius:var(--r-sm);padding:2px;gap:2px}
+.tpill-btn{padding:2px 8px;border-radius:3px;font-size:9px;font-weight:600;color:var(--muted);cursor:pointer;transition:background 100ms,color 100ms;user-select:none}
+.tpill-btn.on{background:var(--accent);color:var(--accent-txt)}
+.toggle-switch{width:30px;height:15px;border-radius:999px;position:relative;cursor:pointer;flex-shrink:0;margin-left:8px}
+.toggle-switch.on{background:var(--accent)}
+.toggle-switch.off{background:var(--surface3)}
+.toggle-switch::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:white;top:2px;transition:left 120ms}
+.toggle-switch.on::after{left:calc(100% - 13px)}
+.toggle-switch.off::after{left:2px}
+.ctrl-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.ctrl-label{font-size:10px;color:var(--muted);width:34px;flex-shrink:0}
+.ctrl-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px 7px;font-size:11px;font-family:var(--font);color:var(--text);outline:none}
+.ctrl-input:focus{border-color:var(--accent)}
+.ctrl-select{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px 6px;font-size:11px;font-family:var(--font);color:var(--text);outline:none;cursor:pointer}
+.align-group{display:flex;gap:2px}
+.align-btn{width:24px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:3px;background:var(--btn-idle);color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:background 100ms,color 100ms;user-select:none}
+.align-btn.on{background:var(--accent);color:white}
+.color-swatch{width:22px;height:22px;border-radius:var(--r-sm);border:1px solid var(--border);cursor:pointer;flex-shrink:0}
+.slider-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.slider-label{font-size:10px;color:var(--muted);width:44px;flex-shrink:0}
+.slider-val{font-size:10px;color:var(--subtext);width:28px;text-align:right;font-family:var(--mono)}
+.slider{flex:1;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--accent) 75%,var(--surface3) 75%);position:relative;cursor:pointer}
+.slider::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;background:var(--accent);top:-3.5px;left:calc(75% - 5px);border:2px solid white;box-shadow:var(--shadow-sm)}
+.toggle-row{display:flex;gap:6px;margin-bottom:2px}
+.tog{padding:3px 10px;border-radius:var(--r-sm);font-size:10px;font-weight:500;background:var(--btn-idle);color:var(--muted);cursor:pointer;transition:background 100ms,color 100ms;user-select:none}
+.tog.on{background:var(--accent);color:white}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="logo-mark">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="9" rx="1.5" stroke="white" stroke-width="1.5"/><path d="M5 14h6M8 11v3" stroke="white" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6h6M5 8.5h4" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".6"/></svg>
+    </div>
+    <div><div class="nav-title">Certy</div><div class="nav-version">v4.0.1</div></div>
+  </div>
+  <div class="nav-section">Workspace</div>
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="9" rx="1.5"/><path d="M5 14h6M8 11v3" stroke-linecap="round"/></svg>Editor</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5h12M2 8h8M2 11h10" stroke-linecap="round"/></svg>Data</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.5"/><path d="M8 5.5v2.5l2 1.5" stroke-linecap="round"/></svg>History</div>
+  <div class="nav-section" style="margin-top:8px">Output</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 12V6l4-3 4 3v6M6 12V9h4v3" stroke-linecap="round" stroke-linejoin="round"/></svg>Generate</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3" stroke-linecap="round"/></svg>Export</div>
+  <div class="nav-bottom">
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke-linecap="round"/></svg>Settings</div>
+  </div>
+</nav>
+<div class="main">
+  <div class="workarea">
+    <div class="toolbar">
+      <button class="tool-btn"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 10V3.5L6.5 1 11 3.5V10" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 10V7h4v3" stroke-linecap="round" stroke-linejoin="round"/></svg>Open Template</button>
+      <button class="tool-btn"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h9M2 6.5h6M2 9h7" stroke-linecap="round"/></svg>Load Data</button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M5 6.5l1.5 1.5 2.5-2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Preview</button>
+      <div class="tool-spacer"></div>
+      <span class="badge badge-success">12 rows loaded</span>
+      <div class="tool-sep"></div>
+      <button class="tool-btn primary"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 2v7M3.5 6l3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11h9" stroke-linecap="round"/></svg>Generate PDFs</button>
+    </div>
+    <div class="canvas-wrap">
+      <div class="certificate-card">
+        <div class="cert-top-bar"></div>
+        <div class="field-handle active" style="top:90px;left:110px;width:300px;height:40px;"></div>
+        <div class="field-handle" style="top:142px;left:150px;width:220px;height:22px;"></div>
+        <div class="cert-label">Certificate of Completion</div>
+        <div class="cert-title">This certifies that</div>
+        <div class="cert-name">Rahul Sharma</div>
+        <div class="cert-divider"></div>
+        <div class="cert-label" style="text-align:center;max-width:280px;line-height:1.6;color:#9ca3af;font-size:9.5px">has successfully completed<br><strong style="color:#6b6860">Full Stack Web Development</strong></div>
+        <div class="cert-meta" style="margin-top:8px">Issued: 02 Jun 2026 &nbsp;·&nbsp; ID: CERT-2026-0042</div>
+      </div>
+    </div>
+    <div class="statusbar">
+      <div class="status-dot"></div><span>Ready</span>
+      <span style="color:var(--border-md)">·</span><span>template.png</span>
+      <span style="color:var(--border-md)">·</span><span>1240 × 878 px</span>
+      <div class="status-spacer"></div>
+      <span>5 fields</span><span style="color:var(--border-md)">·</span><span>zoom 47%</span>
+    </div>
+  </div>
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <div class="stab active">Fields</div>
+      <div class="stab">Template</div>
+      <div class="stab">Output</div>
+    </div>
+    <div class="sidebar-scroll">
+      <div class="field-card" style="background:var(--accent-dim);">
+        <div class="field-header"><span class="field-name" style="color:var(--accent2)">name</span>
+          <div class="toggle-pill"><div class="tpill-btn">Text</div><div class="tpill-btn">QR</div><div class="tpill-btn">IMG</div></div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div class="ctrl-row"><span class="ctrl-label">Size</span><input class="ctrl-input" value="48" style="width:44px;flex:none"><span class="ctrl-label" style="width:auto;margin-left:6px">Font</span><select class="ctrl-select"><option>Montserrat</option></select></div>
+        <div class="ctrl-row"><span class="ctrl-label">Color</span><div class="color-swatch" style="background:#1a7a5e"></div><span class="ctrl-label" style="width:auto;margin-left:6px">Align</span><div class="align-group"><div class="align-btn">L</div><div class="align-btn on">C</div><div class="align-btn">R</div></div></div>
+        <div class="slider-row"><span class="slider-label">Opacity</span><div class="slider"></div><span class="slider-val">75%</span></div>
+        <div class="toggle-row"><div class="tog on">Shadow</div><div class="tog">Outline</div></div>
+      </div>
+      <div class="field-card">
+        <div class="field-header"><span class="field-name">course</span>
+          <div class="toggle-pill"><div class="tpill-btn">Text</div><div class="tpill-btn">QR</div><div class="tpill-btn">IMG</div></div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div class="ctrl-row"><span class="ctrl-label">Size</span><input class="ctrl-input" value="28" style="width:44px;flex:none"><span class="ctrl-label" style="width:auto;margin-left:6px">Font</span><select class="ctrl-select"><option>Lora</option></select></div>
+        <div class="ctrl-row"><span class="ctrl-label">Color</span><div class="color-swatch" style="background:#6b6860"></div><span class="ctrl-label" style="width:auto;margin-left:6px">Align</span><div class="align-group"><div class="align-btn">L</div><div class="align-btn on">C</div><div class="align-btn">R</div></div></div>
+        <div class="slider-row"><span class="slider-label">Opacity</span><div class="slider" style="background:linear-gradient(90deg,var(--accent) 100%,var(--surface3) 100%)"></div><span class="slider-val">100%</span></div>
+      </div>
+      <div class="field-card" style="opacity:0.6">
+        <div class="field-header"><span class="field-name">date</span>
+          <div class="toggle-pill"><div class="tpill-btn">Text</div><div class="tpill-btn">QR</div><div class="tpill-btn">IMG</div></div>
+          <div class="toggle-switch off"></div>
+        </div>
+        <div class="ctrl-row"><span class="ctrl-label">Size</span><input class="ctrl-input" value="18" style="width:44px;flex:none"><span class="ctrl-label" style="width:auto;margin-left:6px">Font</span><select class="ctrl-select"><option>IBM Plex Sans</option></select></div>
+      </div>
+      <div class="field-card">
+        <div class="field-header"><span class="field-name">serial</span>
+          <div class="toggle-pill"><div class="tpill-btn">Text</div><div class="tpill-btn on">QR</div><div class="tpill-btn">IMG</div></div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div class="ctrl-row"><span class="ctrl-label">QR size</span><input class="ctrl-input" value="80" style="width:52px;flex:none"><span style="font-size:10px;color:var(--muted);margin-left:4px">px</span></div>
+        <div class="slider-row"><span class="slider-label">Opacity</span><div class="slider" style="background:linear-gradient(90deg,var(--accent) 88%,var(--surface3) 88%)"></div><span class="slider-val">88%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,137 +1,179 @@
 """
-All Toplevel dialog windows — dark-themed.
+Misc dialogs: certificate preview, colour pickers.
 """
 import tkinter as tk
 from tkinter import colorchooser
 
-from PIL import Image, ImageTk
+from PIL import ImageTk
 
-from app.constants import C
+from app.constants import (
+    C, FONT_FAMILY_UI, FONT_SZ_SM, FONT_SZ_MD,
+    PAD_SM, PAD_MD, PAD_LG,
+)
 from app.helpers import cmyk_to_hex
-from app.ui.widgets import flat_button, label, hsep
-
-_LANCZOS = Image.Resampling.LANCZOS
 
 
-def _dark_win(parent, title, w=None, h=None, resizable=(True, True)):
-    """Create a consistently styled Toplevel."""
+# ---------------------------------------------------------------------------
+def show_preview(parent, pil_image) -> None:
+    """Show a certificate preview in a centered modal window."""
     win = tk.Toplevel(parent)
-    win.title(title)
-    win.transient(parent)
-    win.grab_set()
+    win.title("Preview")
     win.configure(bg=C["surface"])
-    win.resizable(*resizable)
-    if w and h:
-        win.geometry(f"{w}x{h}")
-    return win
+    win.grab_set()
+    win.resizable(True, True)
 
+    # constrain to 90% of screen
+    sw = parent.winfo_screenwidth()
+    sh = parent.winfo_screenheight()
+    max_w = int(sw * 0.9)
+    max_h = int(sh * 0.85)
 
-def show_preview(parent: tk.Tk, img: Image.Image) -> None:
-    """Resizable certificate preview window."""
-    pw = max(parent.winfo_width() - 80, 700)
-    ph = max(parent.winfo_height() - 80, 480)
-    win = _dark_win(parent, "Preview", pw, ph)
+    img_w, img_h = pil_image.size
+    scale = min(max_w / img_w, max_h / img_h, 1.0)
+    disp_w = max(int(img_w * scale), 1)
+    disp_h = max(int(img_h * scale), 1)
+
+    resized = pil_image.resize((disp_w, disp_h))
+    photo   = ImageTk.PhotoImage(resized)
 
     # toolbar
-    bar = tk.Frame(win, bg=C["nav"], height=40)
+    bar = tk.Frame(win, bg=C["surface2"], height=36)
     bar.pack(fill="x")
     bar.pack_propagate(False)
-    tk.Label(bar, text="Preview — first record",
-             font=("Segoe UI", 9), fg=C["subtext"],
-             bg=C["nav"]).pack(side="left", padx=14)
+    tk.Label(
+        bar,
+        text="Certificate Preview",
+        font=(FONT_FAMILY_UI, FONT_SZ_MD, "bold"),
+        fg=C["text"], bg=C["surface2"],
+    ).pack(side="left", padx=PAD_MD)
     tk.Button(
-        bar, text="✕  Close",
+        bar,
+        text="Close",
         command=win.destroy,
-        bg=C["nav"], fg=C["subtext"],
-        relief="flat", bd=0, cursor="hand2",
-        font=("Segoe UI", 8),
-        activebackground=C["surface"],
-        activeforeground=C["danger"],
-        padx=12, pady=4,
-    ).pack(side="right", padx=6)
+        bg=C["surface2"], fg=C["subtext"],
+        relief="flat", cursor="hand2",
+        font=(FONT_FAMILY_UI, FONT_SZ_SM),
+        activebackground=C["btn_idle"],
+        activeforeground=C["text"],
+        bd=0, highlightthickness=0,
+        padx=10, pady=6,
+    ).pack(side="right", padx=PAD_SM)
 
-    # image area
-    img_frame = tk.Frame(win, bg=C["canvas_bg"])
-    img_frame.pack(fill="both", expand=True, padx=12, pady=12)
+    # 1px divider
+    tk.Frame(win, bg=C["border"], height=1).pack(fill="x")
 
-    iw, ih  = img.size
-    ratio   = min((pw - 40) / iw, (ph - 80) / ih, 1.0)
-    photo   = ImageTk.PhotoImage(
-        img.resize((max(int(iw * ratio), 1),
-                    max(int(ih * ratio), 1)), _LANCZOS))
-    lbl = tk.Label(img_frame, image=photo, bg=C["canvas_bg"], bd=0)
-    lbl.image = photo
-    lbl.pack(expand=True)
+    # image
+    lbl = tk.Label(win, image=photo, bg=C["canvas_bg"])
+    lbl.image = photo  # keep reference
+    lbl.pack(padx=PAD_MD, pady=PAD_MD)
 
-    win.bind("<Escape>", lambda e: win.destroy())
-    win.lift()
-    win.focus_set()
-
-
-def pick_color_rgb(parent: tk.Tk, field: str, font_settings: dict) -> None:
-    cur    = font_settings[field]["color"].get()
-    init   = cur if cur.startswith("#") else "#000000"
-    chosen = colorchooser.askcolor(
-        title=f"Color for ‘{field}’", initialcolor=init, parent=parent)
-    if chosen[1]:
-        font_settings[field]["color"].set(chosen[1])
+    win.update_idletasks()
+    # center on parent
+    pw = parent.winfo_width()
+    ph = parent.winfo_height()
+    px = parent.winfo_rootx()
+    py = parent.winfo_rooty()
+    w  = win.winfo_width()
+    h  = win.winfo_height()
+    win.geometry(f"+{px + (pw - w) // 2}+{py + (ph - h) // 2}")
 
 
-def pick_color_cmyk(parent: tk.Tk, field: str, font_settings: dict) -> None:
-    cur = font_settings[field]["color"].get()
-    try:
-        vals = list(map(float, cur[5:-1].split(",")))
-    except Exception:
-        vals = [0.0, 0.0, 0.0, 0.0]
+# ---------------------------------------------------------------------------
+def pick_color_rgb(parent, initial: str = "#000000") -> str | None:
+    """Open the system colour picker; return hex string or None."""
+    _, hex_color = colorchooser.askcolor(
+        color=initial, parent=parent, title="Pick colour")
+    return hex_color
 
-    win = _dark_win(parent, f"CMYK — {field}",
-                    320, 260, resizable=(False, False))
 
-    cvars = {ch: tk.DoubleVar(value=v)
-             for ch, v in zip("CMYK", vals)}
+def pick_color_cmyk(parent, initial_hex: str = "#000000") -> str | None:
+    """
+    Simple CMYK input dialog.
+    Returns an RGB hex string (converted from CMYK) or None on cancel.
+    """
+    win = tk.Toplevel(parent)
+    win.title("CMYK Colour")
+    win.configure(bg=C["surface"])
+    win.resizable(False, False)
+    win.grab_set()
 
-    # preview swatch
-    preview = tk.Label(win, width=24, height=3,
-                       bg=C["surface2"], relief="flat")
-    preview.grid(row=0, column=0, columnspan=2,
-                 padx=20, pady=(16, 10), sticky="ew")
+    result: list[str | None] = [None]
 
-    def _refresh(*_):
-        cmyk_str = "cmyk({:.2f},{:.2f},{:.2f},{:.2f})".format(
-            cvars["C"].get(), cvars["M"].get(),
-            cvars["Y"].get(), cvars["K"].get())
-        font_settings[field]["color"].set(cmyk_str)
-        try:
-            preview.config(bg=cmyk_to_hex(cmyk_str))
-        except Exception:
-            pass
+    tk.Label(
+        win,
+        text="CMYK Colour",
+        font=(FONT_FAMILY_UI, FONT_SZ_MD, "bold"),
+        fg=C["text"], bg=C["surface"],
+    ).pack(anchor="w", padx=PAD_LG, pady=(PAD_LG, PAD_SM))
 
-    for row, (ch_name, ch) in enumerate(
-            zip(("Cyan", "Magenta", "Yellow", "Black"), "CMYK"), start=1):
+    form = tk.Frame(win, bg=C["surface"])
+    form.pack(padx=PAD_LG, pady=(0, PAD_MD))
+
+    entries: dict[str, tk.Entry] = {}
+    for i, ch in enumerate(("C", "M", "Y", "K")):
         tk.Label(
-            win, text=ch_name,
-            font=("Segoe UI", 8), fg=C["subtext"],
-            bg=C["surface"], anchor="e", width=7,
-        ).grid(row=row, column=0, padx=(16, 6), pady=4, sticky="e")
-        tk.Scale(
-            win, from_=0, to=1, resolution=0.01,
-            variable=cvars[ch], command=_refresh,
-            orient="horizontal", length=210,
-            bg=C["surface"], fg=C["text"],
-            troughcolor=C["surface3"],
-            highlightthickness=0, relief="flat",
-            showvalue=False,
-        ).grid(row=row, column=1, padx=(0, 16))
+            form, text=ch,
+            font=(FONT_FAMILY_UI, FONT_SZ_SM, "bold"),
+            fg=C["subtext"], bg=C["surface"], width=2,
+        ).grid(row=0, column=i * 2, padx=(0, 4))
+        e = tk.Entry(
+            form, width=5,
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            fg=C["text"], bg=C["surface3"],
+            relief="flat", bd=0,
+            highlightthickness=1,
+            highlightbackground=C["border"],
+            highlightcolor=C["accent"],
+            insertbackground=C["text"],
+        )
+        e.insert(0, "0")
+        e.grid(row=0, column=i * 2 + 1, padx=(0, 12))
+        entries[ch] = e
 
-    _refresh()
+    tk.Frame(win, bg=C["border"], height=1).pack(fill="x", padx=PAD_LG)
+
+    btn_row = tk.Frame(win, bg=C["surface"])
+    btn_row.pack(fill="x", padx=PAD_LG, pady=PAD_MD)
+
+    def _cancel():
+        win.destroy()
+
+    def _ok():
+        try:
+            vals = [max(0, min(100, int(entries[c].get()))) for c in "CMYK"]
+            result[0] = cmyk_to_hex(*vals)
+        except ValueError:
+            pass
+        win.destroy()
+
     tk.Button(
-        win, text="Apply",
-        command=win.destroy,
-        bg=C["accent"], fg=C["white"],
-        relief="flat", bd=0, cursor="hand2",
-        font=("Segoe UI", 9, "bold"),
+        btn_row, text="Cancel", command=_cancel,
+        bg=C["btn_idle"], fg=C["text"],
+        relief="flat", cursor="hand2",
+        font=(FONT_FAMILY_UI, FONT_SZ_SM),
+        activebackground=C["btn_hover"],
+        activeforeground=C["text"],
+        bd=0, highlightthickness=0, padx=12, pady=6,
+    ).pack(side="right", padx=(4, 0))
+
+    tk.Button(
+        btn_row, text="Apply", command=_ok,
+        bg=C["accent"], fg=C["text_inv"],
+        relief="flat", cursor="hand2",
+        font=(FONT_FAMILY_UI, FONT_SZ_SM, "bold"),
         activebackground=C["accent2"],
-        activeforeground=C["white"],
-        padx=28, pady=6,
-    ).grid(row=5, column=0, columnspan=2, pady=(8, 16))
-    parent.wait_window(win)
+        activeforeground=C["text_inv"],
+        bd=0, highlightthickness=0, padx=12, pady=6,
+    ).pack(side="right")
+
+    win.update_idletasks()
+    pw = parent.winfo_width()
+    ph = parent.winfo_height()
+    px = parent.winfo_rootx()
+    py = parent.winfo_rooty()
+    w  = win.winfo_width()
+    h  = win.winfo_height()
+    win.geometry(f"+{px + (pw - w) // 2}+{py + (ph - h) // 2}")
+
+    win.wait_window()
+    return result[0]

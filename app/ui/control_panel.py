@@ -1,244 +1,214 @@
 """
-Left sidebar: field list, actions, filename pattern, progress, log.
+Left sidebar: field settings, action buttons, log output.
+Clean card-based layout. Single-pixel dividers. No heavy chrome.
 """
 import tkinter as tk
 from tkinter import ttk
 
-from app.constants import C, SIDEBAR_W
-from app.ui.widgets import label, hsep
+from app.constants import (
+    C, SIDEBAR_W,
+    FONT_FAMILY_UI, FONT_SZ_SM, FONT_SZ_MD, FONT_SZ_LG,
+    PAD_SM, PAD_MD, PAD_LG,
+)
+from app.ui.widgets import flat_button, hsep
 
-# Supported output formats; first entry is the default.
 _OUTPUT_FORMATS = ["PDF", "PNG", "JPEG", "WebP"]
 
 
 class ControlPanel(tk.Frame):
-    """
-    Exposes:
-      self.fields_frame      -- Frame where FieldList is injected
-      self.progress          -- ttk.Progressbar
-      self.info_text         -- tk.Text log
-      self.filename_pattern  -- tk.StringVar  (e.g. "{name}_{date}")
-      self.output_format     -- tk.StringVar  ("PDF" | "PNG" | "JPEG" | "WebP")
-    """
 
     def __init__(self, parent, preview_cmd, generate_cmd):
         super().__init__(
             parent,
+            bg=C["surface2"],
             width=SIDEBAR_W,
-            bg=C["surface"],
-            highlightthickness=1,
-            highlightbackground=C["border"],
         )
-        self.pack(side="left", fill="y", padx=(0, 10), pady=6)
+        self.pack(side="left", fill="y", padx=(0, 8), pady=0)
         self.pack_propagate(False)
-        self.filename_pattern = tk.StringVar(value="")
-        self.output_format    = tk.StringVar(value=_OUTPUT_FORMATS[0])
+
+        # public StringVars that core.py reads and writes
+        self.filename_pattern = tk.StringVar(value="{Name}")
+        self.output_format    = tk.StringVar(value="PDF")
+
         self._build(preview_cmd, generate_cmd)
 
     # ------------------------------------------------------------------
     def _build(self, preview_cmd, generate_cmd):
-        # Header
-        hdr = tk.Frame(self, bg=C["surface"], pady=12)
-        hdr.pack(fill="x", padx=16)
-        tk.Label(hdr, text="\u25a3  Fields",
-                 font=("Segoe UI", 10, "bold"),
-                 fg=C["text"], bg=C["surface"]).pack(side="left")
-        hsep(self, padx=0, pady=0)
+        # ---- section: Fields -----------------------------------------
+        self._section_header("Fields")
 
-        # Field list injection point
-        self.fields_frame = tk.Frame(self, bg=C["surface"])
-        self.fields_frame.pack(fill="x")
+        self.fields_frame = tk.Frame(self, bg=C["surface2"])
+        self.fields_frame.pack(fill="x", padx=PAD_SM, pady=(0, PAD_SM))
 
-        hsep(self, padx=0, pady=0)
+        hsep(self, padx=PAD_SM)
 
-        # Filename pattern row
-        fn_wrap = tk.Frame(self, bg=C["surface"], pady=8)
-        fn_wrap.pack(fill="x", padx=14)
-        fn_top = tk.Frame(fn_wrap, bg=C["surface"])
-        fn_top.pack(fill="x", pady=(0, 4))
-        tk.Label(fn_top, text="\U0001f4c4  Filename pattern",
-                 font=("Segoe UI", 8, "bold"),
-                 fg=C["subtext"], bg=C["surface"]).pack(side="left")
-        tk.Label(fn_top, text="e.g. {name}_{date}",
-                 font=("Segoe UI", 7),
-                 fg=C["muted"], bg=C["surface"]).pack(side="right")
-        fn_entry = tk.Entry(
-            fn_wrap,
-            textvariable=self.filename_pattern,
-            bg=C["surface3"], fg=C["text"],
-            insertbackground=C["accent"],
-            relief="flat", bd=0,
-            font=("Segoe UI", 9),
-            highlightthickness=1, highlightbackground=C["border"],
-        )
-        fn_entry.pack(fill="x", ipady=5)
+        # ---- section: Output settings --------------------------------
+        self._section_header("Output")
 
-        hsep(self, padx=0, pady=0)
+        out_card = tk.Frame(self, bg=C["surface2"])
+        out_card.pack(fill="x", padx=PAD_SM, pady=(0, PAD_SM))
 
-        # Output format selector
-        fmt_wrap = tk.Frame(self, bg=C["surface"], pady=8)
-        fmt_wrap.pack(fill="x", padx=14)
-        tk.Label(fmt_wrap, text="\U0001f5c2  Output format",
-                 font=("Segoe UI", 8, "bold"),
-                 fg=C["subtext"], bg=C["surface"]).pack(anchor="w", pady=(0, 5))
-
-        btn_row = tk.Frame(fmt_wrap, bg=C["surface"])
-        btn_row.pack(fill="x")
-        self._fmt_buttons = {}
-        for fmt in _OUTPUT_FORMATS:
-            btn = tk.Button(
-                btn_row, text=fmt,
-                font=("Segoe UI", 8, "bold"),
-                relief="flat", bd=0, cursor="hand2",
-                padx=8, pady=5,
-                command=lambda f=fmt: self._select_format(f),
-            )
-            btn.pack(side="left", expand=True, fill="x", padx=(0, 3))
-            self._fmt_buttons[fmt] = btn
-        self._select_format(_OUTPUT_FORMATS[0])
-
-        # Format hint line (updates when selection changes)
-        self._fmt_hint_var = tk.StringVar()
+        # filename pattern
         tk.Label(
-            fmt_wrap,
-            textvariable=self._fmt_hint_var,
-            font=("Segoe UI", 7), fg=C["muted"], bg=C["surface"],
+            out_card,
+            text="Filename pattern",
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            fg=C["subtext"],
+            bg=C["surface2"],
             anchor="w",
-        ).pack(fill="x", pady=(4, 0))
-        self._update_hint(_OUTPUT_FORMATS[0])
+        ).pack(fill="x", pady=(0, 2))
 
-        hsep(self, padx=0, pady=0)
+        tk.Entry(
+            out_card,
+            textvariable=self.filename_pattern,
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            bg=C["surface"],
+            fg=C["text"],
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=C["border"],
+            highlightcolor=C["accent"],
+            insertbackground=C["text"],
+        ).pack(fill="x", ipady=4, pady=(0, PAD_SM))
 
-        # Action buttons
-        btn_area = tk.Frame(self, bg=C["surface"], pady=10)
-        btn_area.pack(fill="x", padx=14)
+        # output format dropdown
+        tk.Label(
+            out_card,
+            text="Output format",
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            fg=C["subtext"],
+            bg=C["surface2"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, 2))
 
-        tk.Button(
-            btn_area, text="\u25b6  Preview", command=preview_cmd,
-            bg=C["surface2"], fg=C["success"],
-            relief="flat", cursor="hand2",
-            font=("Segoe UI", 9, "bold"),
-            activebackground=C["surface3"],
-            activeforeground=C["success"],
-            bd=0, highlightthickness=1,
-            highlightbackground=C["success"],
-            padx=14, pady=8,
-        ).pack(side="left", fill="x", expand=True, padx=(0, 6))
+        fmt_row = tk.Frame(out_card, bg=C["surface2"])
+        fmt_row.pack(fill="x", pady=(0, PAD_SM))
 
-        tk.Button(
-            btn_area, text="\u26a1  Generate", command=generate_cmd,
-            bg=C["accent"], fg=C["white"],
-            relief="flat", cursor="hand2",
-            font=("Segoe UI", 9, "bold"),
-            activebackground=C["accent2"],
-            activeforeground=C["white"],
-            bd=0, highlightthickness=0,
-            padx=14, pady=8,
-        ).pack(side="left", fill="x", expand=True)
+        for fmt in _OUTPUT_FORMATS:
+            rb = tk.Radiobutton(
+                fmt_row,
+                text=fmt,
+                variable=self.output_format,
+                value=fmt,
+                bg=C["surface2"],
+                fg=C["text"],
+                selectcolor=C["accent_dim"],
+                activebackground=C["surface2"],
+                activeforeground=C["text"],
+                font=(FONT_FAMILY_UI, FONT_SZ_SM),
+                relief="flat",
+                bd=0,
+                highlightthickness=0,
+                cursor="hand2",
+            )
+            rb.pack(side="left", padx=(0, PAD_SM))
 
-        # Progress bar
-        prog_wrap = tk.Frame(self, bg=C["surface"])
-        prog_wrap.pack(fill="x", padx=14, pady=(0, 10))
-        self.progress = ttk.Progressbar(
-            prog_wrap, orient="horizontal", mode="determinate",
-            style="Thin.Horizontal.TProgressbar",
+        hsep(self, padx=PAD_SM)
+
+        # ---- section: Actions ----------------------------------------
+        self._section_header("Actions")
+
+        action_row = tk.Frame(self, bg=C["surface2"])
+        action_row.pack(fill="x", padx=PAD_SM, pady=(0, PAD_SM))
+
+        self._btn_preview = flat_button(
+            action_row,
+            text="Preview",
+            command=preview_cmd,
+            bg=C["btn_idle"],
+            active_bg=C["btn_hover"],
+            fg=C["text"],
+            active_fg=C["text"],
+            font_size=FONT_SZ_SM,
         )
-        self.progress.pack(fill="x")
+        self._btn_preview.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
-        hsep(self, padx=0, pady=0)
+        self._btn_generate = flat_button(
+            action_row,
+            text="Generate All",
+            command=generate_cmd,
+            bg=C["accent"],
+            active_bg=C["accent2"],
+            font_size=FONT_SZ_SM,
+            bold=True,
+        )
+        self._btn_generate.pack(side="left", fill="x", expand=True)
 
-        # Log header
-        log_hdr = tk.Frame(self, bg=C["surface"], pady=8)
-        log_hdr.pack(fill="x", padx=14)
-        tk.Label(log_hdr, text="\u29c9  Log",
-                 font=("Segoe UI", 8, "bold"),
-                 fg=C["subtext"], bg=C["surface"]).pack(side="left")
-        tk.Button(
-            log_hdr, text="clear",
-            command=self._clear_log,
-            bg=C["surface"], fg=C["muted"],
-            relief="flat", bd=0, cursor="hand2",
-            font=("Segoe UI", 7),
-            activebackground=C["surface"],
-            activeforeground=C["subtext"],
-        ).pack(side="right")
+        # progress bar
+        self._progress = ttk.Progressbar(
+            self, style="Thin.Horizontal.TProgressbar",
+            orient="horizontal", mode="determinate",
+        )
+        self._progress.pack(fill="x", padx=PAD_SM, pady=(4, PAD_SM))
 
-        # Log text
-        log_wrap = tk.Frame(self, bg=C["surface"])
-        log_wrap.pack(fill="both", expand=True, padx=14, pady=(0, 14))
+        hsep(self, padx=PAD_SM)
 
-        self.info_text = tk.Text(
-            log_wrap, wrap=tk.WORD,
-            font=("Consolas", 8),
-            bg=C["log_bg"], fg=C["subtext"],
-            insertbackground=C["accent"],
-            relief="flat", bd=0, padx=8, pady=6,
+        # ---- section: Log --------------------------------------------
+        self._section_header("Log")
+
+        log_frame = tk.Frame(self, bg=C["surface2"])
+        log_frame.pack(fill="both", expand=True, padx=PAD_SM, pady=(0, PAD_SM))
+
+        self._log = tk.Text(
+            log_frame,
+            bg=C["log_bg"],
+            fg=C["subtext"],
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=C["border"],
+            wrap="word",
             state="disabled",
-            highlightthickness=1, highlightbackground=C["border"],
+            cursor="arrow",
+            padx=8,
+            pady=6,
+            spacing1=2,
         )
-        self.info_text.pack(side="left", fill="both", expand=True)
+        self._log.pack(fill="both", expand=True)
 
-        vsb = ttk.Scrollbar(log_wrap, orient="vertical",
-                            command=self.info_text.yview,
-                            style="Dark.Vertical.TScrollbar")
-        vsb.pack(side="right", fill="y")
-        self.info_text.configure(yscrollcommand=vsb.set)
-
-        self.info_text.tag_configure("ok",   foreground=C["success"])
-        self.info_text.tag_configure("err",  foreground=C["danger"])
-        self.info_text.tag_configure("hdr",  foreground=C["accent"])
-        self.info_text.tag_configure("warn", foreground=C["warning"])
+        # coloured log tags
+        self._log.tag_config("ok",      foreground=C["success"])
+        self._log.tag_config("err",     foreground=C["danger"])
+        self._log.tag_config("warn",    foreground=C["warning"])
+        self._log.tag_config("accent",  foreground=C["accent"])
+        self._log.tag_config("muted",   foreground=C["muted"])
 
     # ------------------------------------------------------------------
-    _FMT_HINTS = {
-        "PDF":  "Vector container. Best for printing.",
-        "PNG":  "Lossless. Best for archiving.",
-        "JPEG": "Compressed. Smallest file size.",
-        "WebP": "Modern lossy. Best for web / social.",
-    }
+    def _section_header(self, title: str) -> None:
+        """Small uppercase section label."""
+        tk.Label(
+            self,
+            text=title.upper(),
+            font=(FONT_FAMILY_UI, FONT_SZ_SM - 1, "bold"),
+            fg=C["muted"],
+            bg=C["surface2"],
+            anchor="w",
+        ).pack(fill="x", padx=PAD_SM + 2, pady=(PAD_MD, 4))
 
-    def _select_format(self, fmt: str) -> None:
-        self.output_format.set(fmt)
-        for name, btn in self._fmt_buttons.items():
-            active = name == fmt
-            btn.configure(
-                bg=C["accent"]    if active else C["surface2"],
-                fg=C["white"]     if active else C["subtext"],
-                activebackground=C["accent2"] if active else C["surface3"],
-                activeforeground=C["white"]   if active else C["text"],
-            )
-        self._update_hint(fmt)
-
-    def _update_hint(self, fmt: str) -> None:
-        hint = self._FMT_HINTS.get(fmt, "")
-        try:
-            self._fmt_hint_var.set(hint)
-        except AttributeError:
-            pass  # called before the label is created during init
+    # ------------------------------------------------------------------
+    def set_progress(self, value: float) -> None:
+        """value: 0.0 -- 1.0"""
+        self._progress["value"] = value * 100
 
     def append_log(self, msg: str, clear: bool = False) -> None:
-        self.info_text.configure(state="normal")
+        self._log.config(state="normal")
         if clear:
-            self.info_text.delete("1.0", tk.END)
+            self._log.delete("1.0", "end")
+
+        # pick tag from message prefix
+        tag = None
         low = msg.lower()
-        if "[error]" in low:
+        if low.startswith(("error", "fail", "[err")):
             tag = "err"
-        elif "[warn]" in low or "duplicate" in low:
+        elif low.startswith(("warn", "[warn")):
             tag = "warn"
-        elif "done" in low or "saved" in low:
+        elif low.startswith(("ok", "done", "saved", "generated", "[ok")):
             tag = "ok"
-        elif msg.startswith("-") or "starting" in low:
-            tag = "hdr"
-        else:
-            tag = ""
-        self.info_text.insert(tk.END, msg + "\n", tag)
-        self.info_text.see(tk.END)
-        self.info_text.configure(state="disabled")
+        elif low.startswith(("info", "[info")):
+            tag = "accent"
 
-    def set_progress(self, pct: float) -> None:
-        self.progress.configure(value=pct)
-
-    def _clear_log(self) -> None:
-        self.info_text.configure(state="normal")
-        self.info_text.delete("1.0", tk.END)
-        self.info_text.configure(state="disabled")
+        self._log.insert("end", msg + "\n", tag or "")
+        self._log.see("end")
+        self._log.config(state="disabled")

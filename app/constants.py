@@ -1,60 +1,65 @@
 # ---------------------------------------------------------------------------
-# Theme palette  —  "Obsidian Studio v4"
-# Refined high-contrast dark theme for better visibility & readability
+# Theme palette  —  "Warm Neutral"
+# Clean, visible, crisp light theme. No glassmorphism. No thick borders.
+# One teal accent. Warm off-white surfaces. Dark sidebar nav.
+#
+# NOTE: Tkinter only accepts 6-digit hex or named colours.
+#       No 8-digit hex (#rrggbbaa) — use solid equivalents for borders.
 # ---------------------------------------------------------------------------
 
 C = {
     # ── backgrounds ─────────────────────────────────────────────────────────
-    "bg":         "#07090d",   # richer deep black
-    "surface":    "#10141c",   # clearer separation
-    "surface2":   "#171c26",
-    "surface3":   "#1f2633",
-    "nav":        "#0b0d12",
-    "canvas_bg":  "#0d1017",
+    "bg":         "#f4f3f0",   # warm off-white page background
+    "surface":    "#faf9f7",   # card / panel surface
+    "surface2":   "#f0efe9",   # slightly recessed input bg
+    "surface3":   "#e8e6df",   # hover trough / slider track
+    "nav":        "#1c1b18",   # dark sidebar
+    "canvas_bg":  "#e9e7e0",   # canvas working area
 
     # ── accents ──────────────────────────────────────────────────────────────
-    "accent":     "#7c84ff",   # brighter indigo for visibility
-    "accent2":    "#6670ff",
-    "accent3":    "#9aa3ff",
-    "accent_dim": "#232a5a",
-    "accent_glow":"#7c84ff35",
+    "accent":     "#1a7a5e",   # teal primary
+    "accent2":    "#0f6249",   # teal darker hover
+    "accent3":    "#5ecba1",   # teal lighter (nav active text)
+    "accent_dim": "#d3ece6",   # teal tinted surface (selected card bg)
 
-    "success":    "#36e0aa",
-    "success2":   "#20c997",
-    "success_dim":"#103329",
+    "success":    "#1e7a45",
+    "success2":   "#16603a",
+    "success_dim":"#ddf0e6",
 
-    "danger":     "#ff7575",
-    "danger2":    "#ff5c5c",
-    "danger_dim": "#341818",
+    "danger":     "#c0392b",
+    "danger2":    "#a12f23",
+    "danger_dim": "#fae5e3",
 
-    "warning":    "#ffd45a",
-    "warning_dim":"#33260f",
+    "warning":    "#b45309",
+    "warning_dim":"#fef3cd",
 
     # ── text ─────────────────────────────────────────────────────────────────
-    "text":       "#f5f7ff",   # brighter white for readability
-    "subtext":    "#aab3c5",   # easier-to-read secondary text
-    "muted":      "#5d667c",   # visible placeholders
-    "text_inv":   "#05060a",
+    "text":       "#1a1917",   # near-black
+    "subtext":    "#6b6860",   # secondary
+    "muted":      "#a8a5a0",   # placeholders / labels
+    "text_inv":   "#ffffff",   # text on dark/accent surfaces
 
-    # ── borders & structure ─────────────────────────────────────────────────
-    "border":     "#2b3242",
-    "border2":    "#3a4358",
-    "row_alt":    "#141a24",
-    "log_bg":     "#090b10",
+    # ── borders & structure ──────────────────────────────────────────────────
+    # Solid equivalents of rgba(26,25,23,0.10) on #faf9f7 and #f4f3f0.
+    # Pre-composited so Tk is happy; visually matches the HTML preview.
+    "border":     "#e2e0db",   # light separator  (~10 % dark on warm surface)
+    "border2":    "#d4d2cb",   # stronger separator (~14 % dark)
+    "row_alt":    "#f6f5f1",   # alternate row tint
+    "log_bg":     "#f0efe9",
     "white":      "#ffffff",
 
-    # ── interactive states ──────────────────────────────────────────────────
-    "btn_idle":   "#1c2230",
-    "btn_hover":  "#2a3245",
-    "btn_active": "#7c84ff",
-    "btn_press":  "#6670ff",
+    # ── interactive states ───────────────────────────────────────────────────
+    "btn_idle":   "#eeece7",   # default button fill
+    "btn_hover":  "#e4e2db",   # hovered button
+    "btn_active": "#1a7a5e",   # active / selected (same as accent)
+    "btn_press":  "#0f6249",
 
-    # ── shadows ─────────────────────────────────────────────────────────────
-    "shadow":     "#030407",
+    # ── shadows ──────────────────────────────────────────────────────────────
+    "shadow":     "#c8c6c0",   # used for any flat shadow approximation in Tk
 }
 
 APP_TITLE          = "Certy"
-APP_VERSION        = "4.0.1"
+APP_VERSION        = "4.2.0"
 
 CANVAS_MAX_W       = 1100
 CANVAS_MAX_H       = 750
@@ -71,8 +76,8 @@ PAD_XL   = 32
 
 # ── radius ─────────────────────────────────────────────────────────────────
 RADIUS_SM = 4
-RADIUS_MD = 8
-RADIUS_LG = 12
+RADIUS_MD = 6
+RADIUS_LG = 10
 
 # ── typography ─────────────────────────────────────────────────────────────
 FONT_FAMILY_UI   = "Segoe UI"

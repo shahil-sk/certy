@@ -1,121 +1,129 @@
 """
-Sheet picker dialog.
-Shown when the user opens an xlsx workbook with more than one sheet.
-Returns the chosen sheet name, or None if the dialog was dismissed.
+Sheet picker dialog -- shown when an xlsx has multiple sheets.
+Clean modal: white background, list of sheets, confirm / cancel.
 """
 import tkinter as tk
-from tkinter import ttk
 
-from app.constants import C
+from app.constants import (
+    C, FONT_FAMILY_UI,
+    FONT_SZ_SM, FONT_SZ_MD, FONT_SZ_LG,
+    PAD_SM, PAD_MD, PAD_LG,
+)
 
 
 class SheetPickerDialog(tk.Toplevel):
-    """
-    Modal sheet picker.
 
-    Usage:
-        dlg = SheetPickerDialog(parent, sheet_names)
-        parent.wait_window(dlg)
-        chosen = dlg.result  # str or None
-    """
-
-    def __init__(self, parent: tk.Misc, names: list[str]):
+    def __init__(self, parent, sheet_names: list[str]):
         super().__init__(parent)
-        self.title("Select sheet")
+        self.title("Select Sheet")
         self.resizable(False, False)
         self.configure(bg=C["surface"])
-        self.result: str | None = None
-
-        self._build(names)
-        self._centre(parent)
-
-        # Make modal
         self.grab_set()
-        self.focus_set()
-        self.protocol("WM_DELETE_WINDOW", self._cancel)
+
+        self._result: str | None = None
+        self._build(sheet_names)
+        self._center(parent)
 
     # ------------------------------------------------------------------
     def _build(self, names: list[str]) -> None:
-        pad = dict(padx=16, pady=8)
+        # header
+        tk.Label(
+            self,
+            text="Select a sheet",
+            font=(FONT_FAMILY_UI, FONT_SZ_LG, "bold"),
+            fg=C["text"],
+            bg=C["surface"],
+        ).pack(anchor="w", padx=PAD_LG, pady=(PAD_LG, PAD_SM))
 
         tk.Label(
             self,
-            text="This workbook has multiple sheets.\nSelect the sheet to load:",
-            font=("Segoe UI", 9),
-            fg=C["text"], bg=C["surface"],
-            justify="left",
-        ).pack(anchor="w", padx=16, pady=(14, 4))
+            text="This workbook contains multiple sheets.",
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            fg=C["subtext"],
+            bg=C["surface"],
+        ).pack(anchor="w", padx=PAD_LG, pady=(0, PAD_MD))
 
-        # Listbox in a frame so we can add a scrollbar cleanly
-        list_frame = tk.Frame(self, bg=C["surface"])
-        list_frame.pack(fill="both", expand=True, padx=16, pady=4)
-
-        vsb = ttk.Scrollbar(list_frame, orient="vertical",
-                            style="Dark.Vertical.TScrollbar")
-        vsb.pack(side="right", fill="y")
-
-        self._listbox = tk.Listbox(
-            list_frame,
-            font=("Segoe UI", 9),
-            bg=C["surface3"], fg=C["text"],
-            selectbackground=C["accent"],
-            selectforeground=C["white"],
-            activestyle="none",
-            relief="flat", bd=0,
-            highlightthickness=1,
-            highlightbackground=C["border"],
-            yscrollcommand=vsb.set,
-            height=min(len(names), 10),
+        # list frame with 1px border
+        list_outer = tk.Frame(
+            self,
+            bg=C["border"],
+            padx=1, pady=1,
         )
-        self._listbox.pack(side="left", fill="both", expand=True)
-        vsb.configure(command=self._listbox.yview)
+        list_outer.pack(fill="x", padx=PAD_LG, pady=(0, PAD_MD))
+
+        list_inner = tk.Frame(list_outer, bg=C["surface"])
+        list_inner.pack(fill="x")
+
+        self._var = tk.StringVar(value=names[0] if names else "")
 
         for name in names:
-            self._listbox.insert(tk.END, name)
-        self._listbox.selection_set(0)
-        self._listbox.bind("<Double-Button-1>", lambda _: self._confirm())
+            rb = tk.Radiobutton(
+                list_inner,
+                text=name,
+                variable=self._var,
+                value=name,
+                font=(FONT_FAMILY_UI, FONT_SZ_SM),
+                fg=C["text"],
+                bg=C["surface"],
+                selectcolor=C["accent_dim"],
+                activebackground=C["surface2"],
+                activeforeground=C["text"],
+                relief="flat",
+                bd=0,
+                highlightthickness=0,
+                anchor="w",
+                cursor="hand2",
+            )
+            rb.pack(fill="x", padx=PAD_SM, pady=2)
 
-        # Buttons
+        # divider
+        tk.Frame(self, bg=C["border"], height=1).pack(fill="x", padx=PAD_LG)
+
+        # buttons
         btn_row = tk.Frame(self, bg=C["surface"])
-        btn_row.pack(fill="x", padx=16, pady=(4, 14))
+        btn_row.pack(fill="x", padx=PAD_LG, pady=PAD_MD)
 
         tk.Button(
-            btn_row, text="Cancel",
-            command=self._cancel,
-            bg=C["surface2"], fg=C["subtext"],
-            relief="flat", bd=0, cursor="hand2",
-            font=("Segoe UI", 9),
-            activebackground=C["surface3"],
+            btn_row,
+            text="Cancel",
+            command=self.destroy,
+            bg=C["btn_idle"], fg=C["text"],
+            relief="flat", cursor="hand2",
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            activebackground=C["btn_hover"],
             activeforeground=C["text"],
-            padx=14, pady=6,
-        ).pack(side="right", padx=(6, 0))
+            bd=0, highlightthickness=0,
+            padx=12, pady=6,
+        ).pack(side="right", padx=(4, 0))
 
         tk.Button(
-            btn_row, text="Load sheet",
+            btn_row,
+            text="Open Sheet",
             command=self._confirm,
-            bg=C["accent"], fg=C["white"],
-            relief="flat", bd=0, cursor="hand2",
-            font=("Segoe UI", 9, "bold"),
+            bg=C["accent"], fg=C["text_inv"],
+            relief="flat", cursor="hand2",
+            font=(FONT_FAMILY_UI, FONT_SZ_SM, "bold"),
             activebackground=C["accent2"],
-            activeforeground=C["white"],
-            padx=14, pady=6,
+            activeforeground=C["text_inv"],
+            bd=0, highlightthickness=0,
+            padx=12, pady=6,
         ).pack(side="right")
 
-    # ------------------------------------------------------------------
-    def _centre(self, parent: tk.Misc) -> None:
-        self.update_idletasks()
-        pw = parent.winfo_rootx() + parent.winfo_width()  // 2
-        ph = parent.winfo_rooty() + parent.winfo_height() // 2
-        w  = self.winfo_width()
-        h  = self.winfo_height()
-        self.geometry(f"+{pw - w // 2}+{ph - h // 2}")
-
     def _confirm(self) -> None:
-        sel = self._listbox.curselection()
-        if sel:
-            self.result = self._listbox.get(sel[0])
+        self._result = self._var.get()
         self.destroy()
 
-    def _cancel(self) -> None:
-        self.result = None
-        self.destroy()
+    def _center(self, parent) -> None:
+        self.update_idletasks()
+        pw = parent.winfo_width() or 800
+        ph = parent.winfo_height() or 600
+        px = parent.winfo_rootx()
+        py = parent.winfo_rooty()
+        w, h = self.winfo_width(), self.winfo_height()
+        x = px + (pw - w) // 2
+        y = py + (ph - h) // 2
+        self.geometry(f"+{x}+{y}")
+
+    @property
+    def result(self) -> str | None:
+        return self._result
