@@ -1,58 +1,57 @@
 # ---------------------------------------------------------------------------
-# Theme palette  --  "Warm Neutral"
-# Clean, crisp, modern. Warm beige surfaces, single teal accent.
-# Inspired by Notion / Linear light mode. No glassmorphism, no thick borders.
+# Theme palette  —  "Warm Neutral"
+# Clean, visible, crisp light theme. No glassmorphism. No thick borders.
+# One teal accent. Warm off-white surfaces. Dark sidebar nav.
 # ---------------------------------------------------------------------------
 
 C = {
-    # -- backgrounds ---------------------------------------------------------
-    "bg":         "#f7f6f3",   # warm off-white page background
-    "surface":    "#ffffff",   # primary card / panel surface
-    "surface2":   "#f3f2ef",   # slightly recessed surface (sidebar, rows)
-    "surface3":   "#eceae5",   # deeper recess (inputs, code blocks)
-    "nav":        "#ffffff",   # top nav bar
-    "canvas_bg":  "#e8e6e0",   # canvas workspace background
+    # ── backgrounds ─────────────────────────────────────────────────────────
+    "bg":         "#f4f3f0",   # warm off-white page background
+    "surface":    "#faf9f7",   # card / panel surface
+    "surface2":   "#f0efe9",   # slightly recessed input bg
+    "surface3":   "#e8e6df",   # hover trough / slider track
+    "nav":        "#1c1b18",   # dark sidebar
+    "canvas_bg":  "#e9e7e0",   # canvas working area
 
-    # -- accent (single teal) ------------------------------------------------
-    "accent":     "#0f7b6c",   # primary teal CTA
-    "accent2":    "#0d6b5d",   # hover
-    "accent3":    "#3da899",   # softer teal for badges / highlights
-    "accent_dim": "#d4ede9",   # teal-tinted surface (selected rows, etc.)
-    "accent_glow":"#0f7b6c18", # very faint teal wash
+    # ── accents ──────────────────────────────────────────────────────────────
+    "accent":     "#1a7a5e",   # teal primary
+    "accent2":    "#0f6249",   # teal darker hover
+    "accent3":    "#5ecba1",   # teal lighter (nav active text)
+    "accent_dim": "#d3ece6",   # teal tinted surface (selected card)
 
-    "success":    "#2d8a4e",
-    "success2":   "#247a42",
-    "success_dim":"#dff3e7",
+    "success":    "#1e7a45",
+    "success2":   "#16603a",
+    "success_dim":"#ddf0e6",
 
     "danger":     "#c0392b",
-    "danger2":    "#a93226",
+    "danger2":    "#a12f23",
     "danger_dim": "#fae5e3",
 
-    "warning":    "#b7670a",
-    "warning_dim":"#fdf0dc",
+    "warning":    "#b45309",
+    "warning_dim":"#fef3cd",
 
-    # -- text ----------------------------------------------------------------
-    "text":       "#1a1916",   # near-black, warm tint
-    "subtext":    "#6b6860",   # secondary labels
-    "muted":      "#b0aca3",   # placeholder, disabled
-    "text_inv":   "#ffffff",   # text on dark/accent backgrounds
+    # ── text ─────────────────────────────────────────────────────────────────
+    "text":       "#1a1917",   # near-black
+    "subtext":    "#6b6860",   # secondary
+    "muted":      "#a8a5a0",   # placeholders / labels
+    "text_inv":   "#ffffff",   # text on dark/accent surfaces
 
-    # -- borders & dividers --------------------------------------------------
-    # single-pixel dividers only; no thick borders
-    "border":     "#e0ddd7",   # standard divider
-    "border2":    "#cbc8c1",   # slightly stronger (focus rings, etc.)
-    "row_alt":    "#f9f8f5",   # alternating table row tint
-    "log_bg":     "#f3f2ef",
+    # ── borders & structure ──────────────────────────────────────────────────
+    # alpha-blended: adapts cleanly, never harsh
+    "border":     "#1a191914",  # rgba 8 %  — dividers, card edges
+    "border2":    "#1a191922",  # rgba 13 % — stronger separators
+    "row_alt":    "#f6f5f1",    # alternate row tint
+    "log_bg":     "#f0efe9",
     "white":      "#ffffff",
 
-    # -- interactive states --------------------------------------------------
-    "btn_idle":   "#f0efe9",   # secondary button default
-    "btn_hover":  "#e6e4de",   # secondary button hover
-    "btn_active": "#0f7b6c",   # primary button (accent)
-    "btn_press":  "#0d6b5d",   # primary button pressed
+    # ── interactive states ───────────────────────────────────────────────────
+    "btn_idle":   "#eeece7",   # default button fill
+    "btn_hover":  "#e4e2db",   # hovered button
+    "btn_active": "#1a7a5e",   # active / selected (same as accent)
+    "btn_press":  "#0f6249",
 
-    # -- shadows (soft, warm-tinted) -----------------------------------------
-    "shadow":     "#c8c5bc",
+    # ── shadows ──────────────────────────────────────────────────────────────
+    "shadow":     "#00000014",  # subtle, warm-neutral
 }
 
 APP_TITLE          = "Certy"
@@ -62,21 +61,21 @@ CANVAS_MAX_W       = 1100
 CANVAS_MAX_H       = 750
 PX_TO_MM           = 0.264583
 DEFAULT_FONT_SIZE  = 32
-SIDEBAR_W          = 340
+SIDEBAR_W          = 330
 
-# -- spacing -----------------------------------------------------------------
+# ── spacing ────────────────────────────────────────────────────────────────
 PAD_XS   = 2
 PAD_SM   = 6
 PAD_MD   = 12
 PAD_LG   = 20
 PAD_XL   = 32
 
-# -- radius ------------------------------------------------------------------
+# ── radius ─────────────────────────────────────────────────────────────────
 RADIUS_SM = 4
 RADIUS_MD = 6
 RADIUS_LG = 10
 
-# -- typography --------------------------------------------------------------
+# ── typography ─────────────────────────────────────────────────────────────
 FONT_FAMILY_UI   = "Segoe UI"
 FONT_FAMILY_MONO = "Cascadia Code"
 
