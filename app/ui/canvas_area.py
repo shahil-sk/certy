@@ -4,6 +4,7 @@ Features:
   - Scroll (mousewheel + scrollbars)
   - Row preview switcher in toolbar
   - Ctrl+Scroll zoom (30% - 200%)
+  - Zoom in / out buttons in toolbar
   - Undo / Redo for placeholder positions (Ctrl+Z / Ctrl+Y or Ctrl+Shift+Z)
 """
 import platform
@@ -13,11 +14,17 @@ from collections import deque
 
 from PIL import Image, ImageTk
 
-from app.constants import C, CANVAS_MAX_W, CANVAS_MAX_H
+from app.constants import C, CANVAS_MAX_W, CANVAS_MAX_H, FONT_FAMILY_UI
 from app.image_renderer import render_placeholder
 
 _LANCZOS   = Image.Resampling.LANCZOS
 _MAX_UNDO  = 50
+_ZOOM_MIN  = 0.3
+_ZOOM_MAX  = 2.0
+_ZOOM_STEP = 0.1
+
+# toolbar sits on the light surface, not the dark nav sidebar
+_TB_BG = C["surface"]
 
 
 class CanvasArea(tk.Frame):
@@ -55,51 +62,70 @@ class CanvasArea(tk.Frame):
     # Toolbar
     # ------------------------------------------------------------------
     def _build_toolbar(self) -> None:
-        tb = tk.Frame(self, bg=C["nav"], height=32)
+        tb = tk.Frame(self, bg=_TB_BG, height=32)
         tb.pack(fill="x")
         tb.pack_propagate(False)
 
-        self._zoom_label = tk.Label(
-            tb, text="100%",
-            font=("Segoe UI", 8), fg=C["subtext"], bg=C["nav"],
-        )
-        self._zoom_label.pack(side="left", padx=10)
+        # bottom border on toolbar
+        tk.Frame(self, bg=C["border"], height=1).pack(fill="x")
 
-        # undo / redo buttons
-        for txt, cmd in (("\u21b6", self.undo), ("\u21b7", self.redo)):
-            tk.Button(
-                tb, text=txt, command=cmd,
-                bg=C["nav"], fg=C["subtext"],
+        def _tbtn(parent, text, cmd, tooltip=None):
+            """Small flat toolbar button on light bg."""
+            b = tk.Button(
+                parent, text=text, command=cmd,
+                bg=_TB_BG, fg=C["subtext"],
                 relief="flat", bd=0, cursor="hand2",
-                font=("Segoe UI", 11),
-                activebackground=C["surface"],
+                font=(FONT_FAMILY_UI, 10),
+                activebackground=C["btn_idle"],
                 activeforeground=C["text"],
                 padx=6, pady=2,
-            ).pack(side="left", padx=(0, 2))
+            )
+            return b
 
-        nav = tk.Frame(tb, bg=C["nav"])
-        nav.pack(side="left", expand=True)
+        # ---- left cluster: zoom controls ---------------------------------
+        zoom_grp = tk.Frame(tb, bg=_TB_BG)
+        zoom_grp.pack(side="left", padx=(8, 0))
 
-        _btn = lambda txt, cmd: tk.Button(
-            nav, text=txt, command=cmd,
-            bg=C["nav"], fg=C["subtext"],
-            relief="flat", bd=0, cursor="hand2",
-            font=("Segoe UI", 9),
-            activebackground=C["surface"],
-            activeforeground=C["text"],
-            padx=8, pady=2,
+        _tbtn(zoom_grp, "\u2212", self._zoom_out).pack(side="left")   # minus
+
+        self._zoom_label = tk.Label(
+            zoom_grp, text="100%", width=5,
+            font=(FONT_FAMILY_UI, 8), fg=C["subtext"], bg=_TB_BG,
+            cursor="hand2",
         )
-        _btn("\u25c4", self._prev_row).pack(side="left")
+        self._zoom_label.pack(side="left", padx=2)
+        self._zoom_label.bind("<Button-1>", lambda _e: self._zoom_reset())
+
+        _tbtn(zoom_grp, "+", self._zoom_in).pack(side="left")
+
+        # thin vertical divider
+        tk.Frame(tb, bg=C["border"], width=1).pack(side="left", fill="y", padx=6, pady=4)
+
+        # ---- undo / redo -------------------------------------------------
+        undo_grp = tk.Frame(tb, bg=_TB_BG)
+        undo_grp.pack(side="left")
+
+        for txt, cmd in (("\u21b6", self.undo), ("\u21b7", self.redo)):
+            _tbtn(undo_grp, txt, cmd).pack(side="left", padx=(0, 2))
+
+        tk.Frame(tb, bg=C["border"], width=1).pack(side="left", fill="y", padx=6, pady=4)
+
+        # ---- centre: row navigator ---------------------------------------
+        nav = tk.Frame(tb, bg=_TB_BG)
+        nav.pack(side="left")
+
+        _tbtn(nav, "\u25c4", self._prev_row).pack(side="left")
         self._row_label = tk.Label(
             nav, text="row \u2014",
-            font=("Segoe UI", 8), fg=C["text"], bg=C["nav"], width=12,
+            font=(FONT_FAMILY_UI, 8), fg=C["text"], bg=_TB_BG, width=12,
         )
         self._row_label.pack(side="left", padx=4)
-        _btn("\u25ba", self._next_row).pack(side="left")
+        _tbtn(nav, "\u25ba", self._next_row).pack(side="left")
 
+        # ---- right: hint text -------------------------------------------
         tk.Label(
-            tb, text="Ctrl+scroll=zoom  Ctrl+Z=undo",
-            font=("Segoe UI", 7), fg=C["muted"], bg=C["nav"],
+            tb, text="Ctrl+scroll to zoom  \u00b7  Ctrl+Z to undo",
+            font=(FONT_FAMILY_UI, 7), fg=C["muted"], bg=_TB_BG,
         ).pack(side="right", padx=10)
 
     # ------------------------------------------------------------------
@@ -132,6 +158,11 @@ class CanvasArea(tk.Frame):
         self._canvas.bind_all("<Control-y>", lambda e: self.redo())
         self._canvas.bind_all("<Control-Y>", lambda e: self.redo())
         self._canvas.bind_all("<Control-Shift-z>", lambda e: self.redo())
+        # keyboard zoom
+        self._canvas.bind_all("<Control-equal>", lambda e: self._zoom_in())
+        self._canvas.bind_all("<Control-plus>",  lambda e: self._zoom_in())
+        self._canvas.bind_all("<Control-minus>", lambda e: self._zoom_out())
+        self._canvas.bind_all("<Control-0>",     lambda e: self._zoom_reset())
 
     # ------------------------------------------------------------------
     @property
@@ -309,7 +340,6 @@ class CanvasArea(tk.Frame):
             ox, oy = coords
             cx = ox / self._scale_x * self._zoom
             cy = oy / self._scale_y * self._zoom
-            # Store without a canvas item; _redraw_image will draw them
             self._placeholders[field] = {"item": None, "x": cx, "y": cy}
         self._redraw_image()
 
@@ -352,7 +382,7 @@ class CanvasArea(tk.Frame):
                 pass
 
     def _on_mousewheel(self, event):
-        if event.state & 0x0004:
+        if event.state & 0x0004:  # Ctrl held
             self._zoom_in() if event.delta > 0 else self._zoom_out()
         else:
             self._canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -375,20 +405,24 @@ class CanvasArea(tk.Frame):
     def _scroll_right(self, _e): self._canvas.xview_scroll( 1, "units")
 
     def _zoom_in(self, _e=None):
-        if self._zoom < 2.0:
-            self._zoom = round(min(self._zoom + 0.1, 2.0), 1)
+        if self._zoom < _ZOOM_MAX:
+            self._zoom = round(min(self._zoom + _ZOOM_STEP, _ZOOM_MAX), 1)
             self._redraw_image()
 
     def _zoom_out(self, _e=None):
-        if self._zoom > 0.3:
-            self._zoom = round(max(self._zoom - 0.1, 0.3), 1)
+        if self._zoom > _ZOOM_MIN:
+            self._zoom = round(max(self._zoom - _ZOOM_STEP, _ZOOM_MIN), 1)
             self._redraw_image()
+
+    def _zoom_reset(self, _e=None):
+        self._zoom = 1.0
+        self._redraw_image()
 
     # ------------------------------------------------------------------
     # Drag  (pushes undo on button-release)
     # ------------------------------------------------------------------
     def _drag_start(self, event, item) -> None:
-        self._push_undo()   # snapshot before move
+        self._push_undo()
         self._drag = {"item": item, "x": event.x, "y": event.y}
 
     def _drag_move(self, event, item) -> None:
