@@ -4,15 +4,17 @@ No tkinter widgets are created in this module.
 
 Per-field controls:
   size, color, font_name, align     -- text fields
-  opacity   (0-100 int)             -- text layer alpha
-  shadow    (bool)                  -- drop shadow
+  opacity   (0-100 int)             -- layer alpha
+  shadow    (bool)                  -- drop shadow (text only)
   shadow_offset (int, px)           -- shadow distance
   outline   (bool)                  -- stroke around text
   outline_width (int, px)           -- stroke width
-  field_type (str: "text" | "qr")   -- render mode
-  qr_size   (int, px)               -- side length of QR image
+  field_type (str)                  -- "text" | "qr" | "image"
+  qr_size   (int, px)               -- QR bounding box side length
+  img_size  (int, px)               -- image overlay bounding box side length
 """
 import io
+import os
 
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -82,7 +84,6 @@ def _paste_qr(qr_img: Image.Image, x: float, y: float, base_img: Image.Image):
     qw, qh = qr_img.size
     px = int(x - qw / 2)
     py = int(y - qh / 2)
-    # Use the alpha channel as a mask so transparent pixels don't clobber the background.
     if qr_img.mode == "RGBA":
         base_img.paste(qr_img, (px, py), mask=qr_img.split()[3])
     else:
@@ -92,6 +93,7 @@ def _paste_qr(qr_img: Image.Image, x: float, y: float, base_img: Image.Image):
 def draw_text_on_image(
     img, fields, field_vars, font_settings,
     available_fonts, student, positions,
+    excel_dir: str = "",
 ):
     """Render all visible fields onto img and return it."""
     img    = img.convert("RGBA")
@@ -114,6 +116,13 @@ def draw_text_on_image(
                 value   = student.get(field, "")
                 qr_img  = make_qr_image(value, qr_size)
                 _paste_qr(qr_img, x, y, img)
+
+            elif field_type == "image":
+                from app.image_field_renderer import paste_image_field
+                img_size = max(20, _get(s.get("img_size"), 120))
+                opacity  = _get(s.get("opacity"), 100)
+                value    = student.get(field, "")
+                paste_image_field(value, img_size, opacity, img, x, y, excel_dir)
 
             else:
                 size  = _get(s["size"],         32)
@@ -150,7 +159,7 @@ def render_placeholder(
     scale_x, scale_y, zoom=1.0,
 ):
     """
-    Return a PIL Image of the sample text (or QR preview) scaled for the canvas.
+    Return a PIL Image of the sample text / QR / image scaled for the canvas.
     """
     s          = font_settings[field]
     field_type = _get(s.get("field_type"), "text")
@@ -160,12 +169,20 @@ def render_placeholder(
         qr_size = max(20, _get(s.get("qr_size"), 120))
         value   = (excel_data[0].get(field, field) if excel_data else field) or field
         qr_img  = make_qr_image(value, qr_size)
-        # Scale to display size
         sw = max(int(qr_size / scale_x * zoom), 1)
         sh = max(int(qr_size / scale_y * zoom), 1)
         return qr_img.resize((sw, sh), _LANCZOS)
 
-    # -- text path (unchanged) --
+    if field_type == "image":
+        from app.image_field_renderer import make_preview_image
+        img_size = max(20, _get(s.get("img_size"), 120))
+        value    = (excel_data[0].get(field, "") if excel_data else "") or ""
+        img      = make_preview_image(value, img_size)
+        sw = max(int(img_size / scale_x * zoom), 1)
+        sh = max(int(img_size / scale_y * zoom), 1)
+        return img.resize((sw, sh), _LANCZOS)
+
+    # text path
     size  = _get(s["size"],     32)
     color = _get(s["color"],    "#000000")
     fname = _get(s["font_name"], "")

@@ -1,12 +1,13 @@
 """
 Scrollable field editor list in the sidebar.
 
-Each field card exposes two render modes:
+Each field card exposes three render modes:
   text  -- font / size / colour / align / opacity / shadow / outline
   qr    -- QR code sized by a pixel-size spinner
+  image -- per-row image overlay sized by a pixel-size spinner
 
-Toggling the QR button swaps the visible controls in-place so the
-sidebar doesn't reflow the whole list.
+Toggling QR or IMG swaps the visible controls in-place without
+reflowing the whole list.
 """
 import tkinter as tk
 from tkinter import ttk
@@ -69,7 +70,7 @@ class _FieldCard(tk.Frame):
 
         s = font_settings[field]
 
-        # ── Row 1: field name + QR toggle + visible toggle ──────────────
+        # -- Row 1: field name + mode toggles + visible toggle ---------------
         r1 = tk.Frame(pad, bg=bg)
         r1.pack(fill="x", pady=(0, 5))
         tk.Label(r1, text=field.upper(), font=("Segoe UI", 7, "bold"),
@@ -83,67 +84,81 @@ class _FieldCard(tk.Frame):
         _ToggleSwitch(vis_frame, field_vars[field],
                       lambda f=field: update_cb(f), bg=bg).pack(side="left")
 
-        # QR mode toggle button (left of visible toggle)
-        qr_btn_frame = tk.Frame(r1, bg=bg)
-        qr_btn_frame.pack(side="right", padx=(0, 8))
+        # Mode toggle buttons (QR + IMG, left of visible toggle)
+        mode_frame = tk.Frame(r1, bg=bg)
+        mode_frame.pack(side="right", padx=(0, 8))
 
-        qr_var = s.get("field_type")
-        is_qr  = (qr_var is not None) and (qr_var.get() == "qr")
+        ft_var   = s.get("field_type")
+        cur_type = ft_var.get() if ft_var else "text"
 
-        qr_btn = tk.Button(
-            qr_btn_frame, text="QR",
-            font=("Segoe UI", 7, "bold"),
-            relief="flat", bd=0, cursor="hand2",
-            padx=6, pady=2,
-            bg=C["accent"]  if is_qr else C["btn_idle"],
-            fg=C["white"]   if is_qr else C["subtext"],
-            activebackground=C["accent2"],
-            activeforeground=C["white"],
-        )
-        qr_btn.pack()
+        def _btn(text, mode):
+            active = cur_type == mode
+            b = tk.Button(
+                mode_frame, text=text,
+                font=("Segoe UI", 7, "bold"),
+                relief="flat", bd=0, cursor="hand2",
+                padx=5, pady=2,
+                bg=C["accent"]  if active else C["btn_idle"],
+                fg=C["white"]   if active else C["subtext"],
+                activebackground=C["accent2"],
+                activeforeground=C["white"],
+            )
+            b.pack(side="left", padx=(0, 2))
+            return b
 
-        # ── Text-mode controls (rows 2-5) ────────────────────────────────
+        qr_btn  = _btn("QR",  "qr")
+        img_btn = _btn("IMG", "image")
+
+        # -- Mode-specific control frames ------------------------------------
         text_frame = tk.Frame(pad, bg=bg)
         text_frame.pack(fill="x")
         self._build_text_controls(
             text_frame, field, s, available_fonts, update_cb, color_cb, bg)
 
-        # ── QR-mode controls ─────────────────────────────────────────────
         qr_frame = tk.Frame(pad, bg=bg)
-        # (packed only when QR mode is active)
-        self._build_qr_controls(qr_frame, field, s, update_cb, bg)
+        self._build_size_controls(
+            qr_frame, field, s, "qr_size", "QR size (px)",
+            40, 600, update_cb, bg)
 
-        # Wire QR toggle
-        def _toggle_qr(f=field):
-            current = s.get("field_type")
-            if current is None:
-                return
-            new_type = "text" if current.get() == "qr" else "qr"
-            current.set(new_type)
-            active = new_type == "qr"
-            qr_btn.config(
-                bg=C["accent"] if active else C["btn_idle"],
-                fg=C["white"]  if active else C["subtext"],
-            )
-            if active:
-                text_frame.pack_forget()
-                qr_frame.pack(fill="x")
-            else:
-                qr_frame.pack_forget()
-                text_frame.pack(fill="x")
-            update_cb(f)
+        img_frame = tk.Frame(pad, bg=bg)
+        self._build_size_controls(
+            img_frame, field, s, "img_size", "Image size (px)",
+            20, 800, update_cb, bg)
+        self._build_opacity_row(img_frame, field, s, update_cb, bg)
 
-        qr_btn.config(command=_toggle_qr)
+        # Map mode → its frame
+        _frames = {"text": text_frame, "qr": qr_frame, "image": img_frame}
+
+        def _show_mode(mode):
+            for m, f in _frames.items():
+                if m == mode:
+                    f.pack(fill="x")
+                else:
+                    f.pack_forget()
 
         # Set initial visibility
-        if is_qr:
-            text_frame.pack_forget()
-            qr_frame.pack(fill="x")
+        _show_mode(cur_type)
+
+        def _switch(new_type, f=field):
+            if ft_var is None:
+                return
+            ft_var.set(new_type)
+            _show_mode(new_type)
+            for btn, mode in ((qr_btn, "qr"), (img_btn, "image")):
+                active = new_type == mode
+                btn.config(
+                    bg=C["accent"] if active else C["btn_idle"],
+                    fg=C["white"]  if active else C["subtext"],
+                )
+            update_cb(f)
+
+        qr_btn.config( command=lambda: _switch("text" if ft_var.get() == "qr"    else "qr"))
+        img_btn.config(command=lambda: _switch("text" if ft_var.get() == "image" else "image"))
 
     # ------------------------------------------------------------------
     def _build_text_controls(self, parent, field, s,
                              available_fonts, update_cb, color_cb, bg):
-        # ── Row 2: size + font ────────────────────────────────────────
+        # Row 2: size + font
         r2 = tk.Frame(parent, bg=bg)
         r2.pack(fill="x", pady=(0, 4))
         tk.Label(r2, text="Sz", font=("Segoe UI", 7),
@@ -171,7 +186,7 @@ class _FieldCard(tk.Frame):
         cb.bind("<<ComboboxSelected>>", lambda e, f=field: update_cb(f))
         cb.pack(side="left", padx=(3, 0))
 
-        # ── Row 3: colour + alignment ─────────────────────────────────
+        # Row 3: colour + alignment
         r3 = tk.Frame(parent, bg=bg)
         r3.pack(fill="x", pady=(0, 4))
         swatch = tk.Button(
@@ -216,30 +231,10 @@ class _FieldCard(tk.Frame):
             b.pack(side="left", padx=(0, 2))
             pill_refs[val] = b
 
-        # ── Row 4: opacity slider ──────────────────────────────────────
-        r4 = tk.Frame(parent, bg=bg)
-        r4.pack(fill="x", pady=(0, 4))
-        tk.Label(r4, text="Opacity", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left")
-        opac_lbl = tk.Label(r4, text="100%", font=("Segoe UI", 7),
-                            fg=C["text"], bg=bg, width=4)
-        opac_lbl.pack(side="right")
+        # Row 4: opacity
+        self._build_opacity_row(parent, field, s, update_cb, bg)
 
-        def _opac_changed(val, f=field):
-            opac_lbl.config(text=f"{int(float(val))}%")
-            update_cb(f)
-
-        tk.Scale(
-            r4, from_=0, to=100, orient="horizontal",
-            variable=s["opacity"],
-            command=_opac_changed,
-            bg=bg, fg=C["text"],
-            troughcolor=C["surface3"],
-            highlightthickness=0, relief="flat",
-            showvalue=False, length=140,
-        ).pack(side="left", padx=(4, 0), fill="x", expand=True)
-
-        # ── Row 5: shadow + outline toggles ───────────────────────────
+        # Row 5: shadow + outline toggles
         r5 = tk.Frame(parent, bg=bg)
         r5.pack(fill="x")
 
@@ -272,15 +267,16 @@ class _FieldCard(tk.Frame):
                  fg=C["muted"], bg=bg).pack(side="left")
 
     # ------------------------------------------------------------------
-    def _build_qr_controls(self, parent, field, s, update_cb, bg):
-        """Controls shown when a field is in QR mode."""
+    def _build_size_controls(self, parent, field, s, key, label_text,
+                             min_val, max_val, update_cb, bg):
+        """Generic size spinner row used for both QR and image modes."""
         row = tk.Frame(parent, bg=bg)
-        row.pack(fill="x", pady=(2, 4))
-        tk.Label(row, text="QR size (px)", font=("Segoe UI", 7),
+        row.pack(fill="x", pady=(2, 2))
+        tk.Label(row, text=label_text, font=("Segoe UI", 7),
                  fg=C["subtext"], bg=bg).pack(side="left")
         spin = tk.Spinbox(
-            row, from_=40, to=600, width=5,
-            textvariable=s.get("qr_size"),
+            row, from_=min_val, to=max_val, width=5,
+            textvariable=s.get(key),
             font=("Segoe UI", 8),
             bg=C["surface3"], fg=C["text"],
             buttonbackground=C["surface3"],
@@ -291,13 +287,36 @@ class _FieldCard(tk.Frame):
         )
         spin.bind("<Return>", lambda e, f=field: update_cb(f))
         spin.pack(side="left", padx=(6, 0))
-
+        hint = "Value taken from data column at runtime."
         tk.Label(
-            parent,
-            text="Value taken from data column at runtime.",
+            parent, text=hint,
             font=("Segoe UI", 6), fg=C["muted"], bg=bg,
             wraplength=240, justify="left",
         ).pack(anchor="w", pady=(0, 4))
+
+    def _build_opacity_row(self, parent, field, s, update_cb, bg):
+        """Shared opacity slider (used by text and image modes)."""
+        r = tk.Frame(parent, bg=bg)
+        r.pack(fill="x", pady=(0, 4))
+        tk.Label(r, text="Opacity", font=("Segoe UI", 7),
+                 fg=C["subtext"], bg=bg).pack(side="left")
+        lbl = tk.Label(r, text="100%", font=("Segoe UI", 7),
+                       fg=C["text"], bg=bg, width=4)
+        lbl.pack(side="right")
+
+        def _changed(val, f=field):
+            lbl.config(text=f"{int(float(val))}%")
+            update_cb(f)
+
+        tk.Scale(
+            r, from_=0, to=100, orient="horizontal",
+            variable=s["opacity"],
+            command=_changed,
+            bg=bg, fg=C["text"],
+            troughcolor=C["surface3"],
+            highlightthickness=0, relief="flat",
+            showvalue=False, length=140,
+        ).pack(side="left", padx=(4, 0), fill="x", expand=True)
 
 
 # ---------------------------------------------------------------------------

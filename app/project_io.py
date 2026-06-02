@@ -1,6 +1,6 @@
 """
 Project file save / load (.certy JSON).
-Version 2.6  --  adds field_type and qr_size to persisted field settings.
+Version 2.7  --  adds img_size to persisted field settings.
 """
 import json
 import os
@@ -41,7 +41,7 @@ def serialise(
         except: return default
 
     return {
-        "version":          "2.6",
+        "version":          "2.7",
         "last_modified":    datetime.now().isoformat(),
         "template_path":    _to_relative(template_path, project_path),
         "excel_path":       _to_relative(excel_path,    project_path),
@@ -62,6 +62,7 @@ def serialise(
                 "outline_width": _get(font_settings[f].get("outline_width"), 2),
                 "field_type":    _get(font_settings[f].get("field_type"), "text"),
                 "qr_size":       _get(font_settings[f].get("qr_size"),  120),
+                "img_size":      _get(font_settings[f].get("img_size"), 120),
             }
             for f in fields
         },

@@ -26,8 +26,9 @@ from app.ui.field_row import FieldList
 from app.ui.canvas_area import CanvasArea
 from app.ui.dialogs import show_preview, pick_color_rgb, pick_color_cmyk
 
-_DEFAULT_ALIGN = "center"
-_DEFAULT_QR_SIZE = 120
+_DEFAULT_ALIGN    = "center"
+_DEFAULT_QR_SIZE  = 120
+_DEFAULT_IMG_SIZE = 120
 
 
 def _make_field_settings(default_font: str) -> dict:
@@ -43,9 +44,12 @@ def _make_field_settings(default_font: str) -> dict:
         "shadow_offset":  tk.IntVar(value=4),
         "outline":        tk.BooleanVar(value=False),
         "outline_width":  tk.IntVar(value=2),
-        # qr rendering
+        # field type
         "field_type":     tk.StringVar(value="text"),
+        # qr rendering
         "qr_size":        tk.IntVar(value=_DEFAULT_QR_SIZE),
+        # image overlay rendering
+        "img_size":       tk.IntVar(value=_DEFAULT_IMG_SIZE),
     }
 
 
@@ -158,6 +162,9 @@ class CertificateApp:
         self.fields      = header
         self.excel_data  = rows
 
+        # Store the Excel file's directory for resolving relative image paths
+        self._excel_dir  = os.path.dirname(os.path.abspath(file_path))
+
         default_font = next(iter(self.available_fonts))
         self.field_vars    = {f: tk.BooleanVar(value=True) for f in header}
         self.font_settings = {f: _make_field_settings(default_font) for f in header}
@@ -213,6 +220,7 @@ class CertificateApp:
             self.fields, self.field_vars, self.font_settings,
             self.available_fonts, self.excel_data[0],
             self._canvas_area.get_scaled_positions(),
+            excel_dir=getattr(self, "_excel_dir", ""),
         )
         show_preview(self.root, img)
 
@@ -257,6 +265,7 @@ class CertificateApp:
             color_mode=self.color_space.get(),
             filename_pattern=self._panel.filename_pattern.get(),
             output_format=output_format,
+            excel_dir=getattr(self, "_excel_dir", ""),
             on_progress=lambda pct: self.root.after(
                 0, lambda v=pct: self._panel.set_progress(v)),
             on_log=lambda msg, clr: self.root.after(
@@ -330,6 +339,7 @@ class CertificateApp:
                 if "outline_width" in s: s["outline_width"].set(settings.get("outline_width", 2))
                 if "field_type"    in s: s["field_type"].set(settings.get("field_type", "text"))
                 if "qr_size"       in s: s["qr_size"].set(settings.get("qr_size", _DEFAULT_QR_SIZE))
+                if "img_size"      in s: s["img_size"].set(settings.get("img_size", _DEFAULT_IMG_SIZE))
             self._field_list.rebuild(
                 self.fields, self.field_vars, self.font_settings,
                 list(self.available_fonts.keys()),
