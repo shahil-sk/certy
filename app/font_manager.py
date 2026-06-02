@@ -9,6 +9,9 @@ from functools import lru_cache
 from PIL import ImageFont
 
 from app.helpers import resource_path
+from app.logger import get_logger
+
+log = get_logger(__name__)
 
 
 def load_available_fonts() -> dict:
@@ -21,7 +24,10 @@ def load_available_fonts() -> dict:
             if f.lower().endswith((".ttf", ".otf")):
                 fonts[os.path.splitext(f)[0]] = os.path.join(fonts_dir, f)
     if not fonts:
+        log.warning("no fonts found in '%s', falling back to arial.ttf", fonts_dir)
         fonts["Default"] = "arial.ttf"
+    else:
+        log.debug("loaded %d font(s) from '%s'", len(fonts), fonts_dir)
     return dict(sorted(fonts.items(), key=lambda x: x[0].lower()))
 
 
@@ -31,6 +37,7 @@ def get_font(path: str, size: int) -> ImageFont.FreeTypeFont:
     try:
         return ImageFont.truetype(path, size)
     except Exception:
+        log.warning("could not load font '%s' at size %d, using default", path, size)
         return ImageFont.load_default()
 
 

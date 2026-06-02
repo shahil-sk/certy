@@ -7,6 +7,10 @@ from datetime import datetime
 
 from openpyxl import load_workbook
 
+from app.logger import get_logger
+
+log = get_logger(__name__)
+
 
 def read(file_path: str) -> tuple[list, list]:
     """
@@ -15,6 +19,7 @@ def read(file_path: str) -> tuple[list, list]:
     rows   : list of dicts  {col_name: str_value}
     Raises ValueError on bad input.
     """
+    log.debug("reading data file: %s", file_path)
     if file_path.lower().endswith(".csv"):
         return _read_csv(file_path)
     return _read_xlsx(file_path)
@@ -48,13 +53,13 @@ def _read_xlsx(file_path: str) -> tuple[list, list]:
     wb.close()
     if not rows:
         raise ValueError("No data rows found in the Excel file.")
+    log.info("xlsx loaded: %d rows, %d columns from '%s'", len(rows), len(header), file_path)
     return header, rows
 
 
 def _read_csv(file_path: str) -> tuple[list, list]:
     rows   = []
     header = []
-    # Try UTF-8 first, fall back to latin-1 (common for exported CSVs)
     for enc in ("utf-8-sig", "utf-8", "latin-1"):
         try:
             with open(file_path, newline="", encoding=enc) as fh:
@@ -67,8 +72,11 @@ def _read_csv(file_path: str) -> tuple[list, list]:
                            for h, orig in zip(header, reader.fieldnames)}
                     if any(rec.values()):
                         rows.append(rec)
+            log.info("csv loaded (enc=%s): %d rows, %d columns from '%s'",
+                     enc, len(rows), len(header), file_path)
             break
         except UnicodeDecodeError:
+            log.debug("encoding %s failed for '%s', trying next", enc, file_path)
             continue
 
     if not header:

@@ -17,6 +17,9 @@ from PIL import Image
 
 from app.helpers import px_to_mm, safe_filename
 from app.image_renderer import draw_text_on_image
+from app.logger import get_logger
+
+log = get_logger(__name__)
 
 _TOKEN_RE = re.compile(r"\{(\w+)\}")
 
@@ -76,12 +79,12 @@ def run(
     out_sub = os.path.join(out_dir, sub)
     os.makedirs(out_sub, exist_ok=True)
 
-    # Inject serial numbers so {serial} works in both renderer and filenames
-    enriched = inject_serial(excel_data)
+    enriched   = inject_serial(excel_data)
     all_fields = fields + (["serial"] if "serial" not in fields else [])
 
     def _worker():
         count = 0
+        log.info("generation started: %d records, mode=%s, output=%s", total, sub, out_dir)
         on_log("Starting generation...", True)
         on_log(f"Records: {total}   Mode: {sub}   Output: {out_dir}", False)
         if filename_pattern:
@@ -90,8 +93,9 @@ def run(
         dupes = _find_duplicates(excel_data, fields)
         if dupes:
             on_log(f"[warn] {len(dupes)} duplicate(s) in '{fields[0]}':", False)
+            log.warning("%d duplicate value(s) in column '%s'", len(dupes), fields[0])
             for val, cnt, _ in dupes[:5]:
-                on_log(f"  • '{val}'  x{cnt}", False)
+                on_log(f"  \u2022 '{val}'  x{cnt}", False)
             if len(dupes) > 5:
                 on_log(f"  ... and {len(dupes)-5} more", False)
 
@@ -116,14 +120,17 @@ def run(
                 dest = os.path.join(out_sub, f"{name}_certificate.pdf")
                 pdf.output(dest)
                 count += 1
+                log.debug("[%d/%d] saved %s", idx + 1, total, dest)
                 on_log(f"[{idx+1}/{total}]  {name}_certificate.pdf", False)
-            except Exception as exc:
-                on_log(f"[error]  cert {idx+1}: {exc}", False)
+            except Exception:
+                log.exception("failed to generate certificate %d", idx + 1)
+                on_log(f"[error]  cert {idx+1}: see certy.log for details", False)
 
             on_progress((idx + 1) / total * 100)
 
         on_log("-" * 44, False)
         on_log(f"Done  {count}/{total} certificates saved.", False)
+        log.info("generation finished: %d/%d certificates saved to %s", count, total, out_sub)
         on_done(count, total)
         lock.release()
 

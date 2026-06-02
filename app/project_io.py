@@ -7,6 +7,10 @@ import json
 import os
 from datetime import datetime
 
+from app.logger import get_logger
+
+log = get_logger(__name__)
+
 
 def _to_relative(asset_path: str, project_path: str) -> str:
     """Return asset_path relative to the directory that holds project_path.
@@ -16,7 +20,6 @@ def _to_relative(asset_path: str, project_path: str) -> str:
     try:
         return os.path.relpath(asset_path, os.path.dirname(project_path))
     except ValueError:
-        # os.path.relpath raises ValueError across Windows drive letters
         return asset_path
 
 
@@ -44,7 +47,6 @@ def serialise(
     return {
         "version":          "2.5",
         "last_modified":    datetime.now().isoformat(),
-        # Store relative so the project is portable across machines / folders
         "template_path":    _to_relative(template_path, project_path),
         "excel_path":       _to_relative(excel_path,    project_path),
         "color_space":      color_space,
@@ -71,14 +73,13 @@ def serialise(
 def save(path: str, data: dict) -> None:
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=2)
+    log.info("project saved to '%s'", path)
 
 
 def load(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as fh:
         data = json.load(fh)
-
-    # Resolve relative paths back to absolute using the project file's location
     for key in ("template_path", "excel_path"):
         data[key] = _to_absolute(data.get(key, ""), path)
-
+    log.info("project loaded from '%s' (version %s)", path, data.get("version", "?"))
     return data

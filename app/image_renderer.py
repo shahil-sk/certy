@@ -16,6 +16,9 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from app.helpers import hex_to_rgb
 from app.font_manager import resolve_font
+from app.logger import get_logger
+
+log = get_logger(__name__)
 
 _LANCZOS = Image.Resampling.LANCZOS
 
@@ -75,7 +78,6 @@ def _draw_text_layer(
             Image.new("RGBA", (canvas_w, canvas_h), (0,0,0,0)),
             mask=sh_layer.split()[3],
         )
-        # composite shadow under text
         base_img.alpha_composite(sh_layer)
 
     # -- outline layer
@@ -114,7 +116,6 @@ def draw_text_on_image(
     positions: dict,
 ) -> Image.Image:
     """Render all visible field text onto img and return it."""
-    # Work in RGBA for compositing, convert at end
     img   = img.convert("RGBA")
     iw, ih = img.size
 
@@ -152,8 +153,8 @@ def draw_text_on_image(
                 canvas_w=iw, canvas_h=ih,
                 draw=None, base_img=img,
             )
-        except Exception as exc:
-            print(f"[renderer] {field}: {exc}")
+        except Exception:
+            log.exception("failed to render field '%s'", field)
 
     return img.convert("RGB")
 
@@ -187,15 +188,12 @@ def render_placeholder(
     font  = resolve_font(available_fonts, fname, size)
     text  = (excel_data[0].get(field, field) if excel_data else field) or field
 
-    # measure tight bounding box of the text (left, top, right, bottom)
     tmp  = Image.new("RGBA", (1, 1))
     draw = ImageDraw.Draw(tmp)
     try:
         bbox = font.getbbox(text)
-        # bbox coords are relative to the draw origin
         tw = max(bbox[2] - bbox[0], 1)
         th = max(bbox[3] - bbox[1], 1)
-        # offset so the tight box starts at (0, 0) in the image
         ox = -bbox[0]
         oy = -bbox[1]
     except Exception:
@@ -208,11 +206,8 @@ def render_placeholder(
 
     img  = Image.new("RGBA", (tw, th), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    # draw at the offset so the tight bounding box fills the image exactly
     draw.text((ox, oy), text, font=font, fill=(r, g, b, alpha))
 
-    # scale to display size: divide by scale to go from image-px to base-canvas-px,
-    # then multiply by zoom so the preview matches the visual zoom level
     sw = max(int(tw / scale_x * zoom), 1)
     sh = max(int(th / scale_y * zoom), 1)
     return img.resize((sw, sh), _LANCZOS)
