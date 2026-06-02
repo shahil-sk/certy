@@ -25,6 +25,7 @@ from app.ui.control_panel import ControlPanel
 from app.ui.field_row import FieldList
 from app.ui.canvas_area import CanvasArea
 from app.ui.dialogs import show_preview, pick_color_rgb, pick_color_cmyk
+from app.ui.sheet_picker import SheetPickerDialog
 
 _DEFAULT_ALIGN    = "center"
 _DEFAULT_QR_SIZE  = 120
@@ -75,6 +76,8 @@ class CertificateApp:
         self.field_vars:     dict = {}
         self.font_settings:  dict = {}
         self.color_space     = tk.StringVar(value="RGB")
+        self._active_sheet:  str  = ""
+        self._excel_dir:     str  = ""
         self._gen_lock       = threading.Lock()
 
         self.available_fonts = load_available_fonts()
@@ -146,24 +149,53 @@ class CertificateApp:
         except Exception as exc:
             messagebox.showerror("Error", f"Cannot load template:\n{exc}")
 
-    def load_excel(self, file_path=None):
+    def load_excel(self, file_path=None, sheet_name: str = ""):
+        """
+        Load a data file.  For xlsx with multiple sheets, shows a picker
+        dialog unless sheet_name is provided directly (e.g. from load_project).
+        """
         if not file_path:
             file_path = filedialog.askopenfilename(
                 title="Select data file",
                 filetypes=[("Excel / CSV", "*.xlsx *.csv")])
-        if not file_path: return
+        if not file_path:
+            return
+
+        # -- Sheet selection for xlsx workbooks
+        chosen_sheet = sheet_name
+        if file_path.lower().endswith(".xlsx"):
+            try:
+                names = excel_loader.sheet_names(file_path)
+            except Exception as exc:
+                messagebox.showerror("Error", str(exc))
+                return
+
+            if len(names) > 1 and not chosen_sheet:
+                dlg = SheetPickerDialog(self.root, names)
+                self.root.wait_window(dlg)
+                if dlg.result is None:
+                    return  # user cancelled
+                chosen_sheet = dlg.result
+
+            # Single-sheet workbooks: just use the active sheet
+            if not chosen_sheet and names:
+                chosen_sheet = names[0]
+
+        # -- Read data
         try:
-            header, rows = excel_loader.read(file_path)
+            if chosen_sheet:
+                header, rows = excel_loader.read_sheet(file_path, chosen_sheet)
+            else:
+                header, rows = excel_loader.read(file_path)
         except Exception as exc:
             messagebox.showerror("Error", str(exc))
             return
 
-        self.excel_path  = file_path
-        self.fields      = header
-        self.excel_data  = rows
-
-        # Store the Excel file's directory for resolving relative image paths
-        self._excel_dir  = os.path.dirname(os.path.abspath(file_path))
+        self.excel_path    = file_path
+        self._active_sheet = chosen_sheet
+        self.fields        = header
+        self.excel_data    = rows
+        self._excel_dir    = os.path.dirname(os.path.abspath(file_path))
 
         default_font = next(iter(self.available_fonts))
         self.field_vars    = {f: tk.BooleanVar(value=True) for f in header}
@@ -184,10 +216,13 @@ class CertificateApp:
             for f in self.fields:
                 self._canvas_area.create_placeholder(f)
 
-        ext = os.path.splitext(file_path)[1].upper()
+        ext   = os.path.splitext(file_path)[1].upper()
         fname = os.path.basename(file_path)
+        sheet_tag = f"  \u00b7  Sheet: {chosen_sheet}" if chosen_sheet else ""
         self._status(
-            f"{ext} loaded  \u00b7  {fname}  \u00b7  {len(rows)} records  \u00b7  {len(header)} fields")
+            f"{ext} loaded  \u00b7  {fname}{sheet_tag}"
+            f"  \u00b7  {len(rows)} records  \u00b7  {len(header)} fields"
+        )
 
     def _on_field_update(self, field):
         self._canvas_area.update_placeholder(field)
@@ -220,7 +255,7 @@ class CertificateApp:
             self.fields, self.field_vars, self.font_settings,
             self.available_fonts, self.excel_data[0],
             self._canvas_area.get_scaled_positions(),
-            excel_dir=getattr(self, "_excel_dir", ""),
+            excel_dir=self._excel_dir,
         )
         show_preview(self.root, img)
 
@@ -265,7 +300,7 @@ class CertificateApp:
             color_mode=self.color_space.get(),
             filename_pattern=self._panel.filename_pattern.get(),
             output_format=output_format,
-            excel_dir=getattr(self, "_excel_dir", ""),
+            excel_dir=self._excel_dir,
             on_progress=lambda pct: self.root.after(
                 0, lambda v=pct: self._panel.set_progress(v)),
             on_log=lambda msg, clr: self.root.after(
@@ -304,6 +339,7 @@ class CertificateApp:
                 field_vars=self.field_vars,
                 filename_pattern=self._panel.filename_pattern.get(),
                 project_path=path,
+                active_sheet=self._active_sheet,
             )
             project_io.save(path, data)
             self._status(f"Project saved  \u00b7  {os.path.basename(path)}")
@@ -318,7 +354,11 @@ class CertificateApp:
         try:
             data = project_io.load(path)
             self.load_template(data.get("template_path"))
-            self.load_excel(data.get("excel_path"))
+            # Pass saved sheet name so picker dialog is skipped on restore
+            self.load_excel(
+                data.get("excel_path"),
+                sheet_name=data.get("active_sheet", ""),
+            )
             self.color_space.set(data.get("color_space", "RGB"))
             self._panel.filename_pattern.set(data.get("filename_pattern", ""))
             pos = data.get("positions", {})
