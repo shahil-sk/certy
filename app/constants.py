@@ -2,6 +2,9 @@
 # Theme palette  —  "Warm Neutral"
 # Clean, visible, crisp light theme. No glassmorphism. No thick borders.
 # One teal accent. Warm off-white surfaces. Dark sidebar nav.
+#
+# NOTE: Tkinter only accepts 6-digit hex or named colours.
+#       No 8-digit hex (#rrggbbaa) — use solid equivalents for borders.
 # ---------------------------------------------------------------------------
 
 C = {
@@ -17,7 +20,7 @@ C = {
     "accent":     "#1a7a5e",   # teal primary
     "accent2":    "#0f6249",   # teal darker hover
     "accent3":    "#5ecba1",   # teal lighter (nav active text)
-    "accent_dim": "#d3ece6",   # teal tinted surface (selected card)
+    "accent_dim": "#d3ece6",   # teal tinted surface (selected card bg)
 
     "success":    "#1e7a45",
     "success2":   "#16603a",
@@ -37,10 +40,11 @@ C = {
     "text_inv":   "#ffffff",   # text on dark/accent surfaces
 
     # ── borders & structure ──────────────────────────────────────────────────
-    # alpha-blended: adapts cleanly, never harsh
-    "border":     "#1a191914",  # rgba 8 %  — dividers, card edges
-    "border2":    "#1a191922",  # rgba 13 % — stronger separators
-    "row_alt":    "#f6f5f1",    # alternate row tint
+    # Solid equivalents of rgba(26,25,23,0.10) on #faf9f7 and #f4f3f0.
+    # Pre-composited so Tk is happy; visually matches the HTML preview.
+    "border":     "#e2e0db",   # light separator  (~10 % dark on warm surface)
+    "border2":    "#d4d2cb",   # stronger separator (~14 % dark)
+    "row_alt":    "#f6f5f1",   # alternate row tint
     "log_bg":     "#f0efe9",
     "white":      "#ffffff",
 
@@ -51,7 +55,7 @@ C = {
     "btn_press":  "#0f6249",
 
     # ── shadows ──────────────────────────────────────────────────────────────
-    "shadow":     "#00000014",  # subtle, warm-neutral
+    "shadow":     "#c8c6c0",   # used for any flat shadow approximation in Tk
 }
 
 APP_TITLE          = "Certy"
