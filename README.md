@@ -5,7 +5,7 @@
 
 **Certy** is a desktop app for bulk certificate generation from a PNG template and a spreadsheet.
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/shahil-sk/certy/build.yml?style=for-the-badge)](https://github.com/shahil-sk/certy/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/shahil-sk/certy/main.yml?style=for-the-badge)](https://github.com/shahil-sk/certy/actions)
 [![Latest Release](https://img.shields.io/github/v/release/shahil-sk/certy?style=for-the-badge)](https://github.com/shahil-sk/certy/releases/latest)
 [![License](https://img.shields.io/github/license/shahil-sk/certy?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.7+-blue?style=for-the-badge&logo=python)](https://python.org)
@@ -63,6 +63,16 @@ python3 main.py
 ```
 
 To add custom fonts, drop `.ttf` or `.otf` files into the `fonts/` folder.
+
+### Optional dependency
+
+QR code fields require one extra package:
+
+```bash
+pip install "qrcode[pil]>=7.4.2"
+```
+
+Without it the app still runs normally — QR fields display a placeholder on the canvas and are skipped during export.
 
 ## How to use it
 
