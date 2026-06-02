@@ -162,6 +162,10 @@ class _FieldCard(tk.Frame):
         """
         Collapsible row that lets the user write an "if col == val" rule.
         When condition_col is empty the field always renders (default).
+
+        Important: the Entry widgets do NOT use textvariable= because we show
+        placeholder hint text that must never be written into the StringVar.
+        The var is only updated on Return / FocusOut when the content is real.
         """
         col_var = s.get("condition_col")
         val_var = s.get("condition_val")
@@ -174,13 +178,12 @@ class _FieldCard(tk.Frame):
         header_row = tk.Frame(wrapper, bg=bg)
         header_row.pack(fill="x")
 
-        # "if..." button toggles the detail row
         detail = tk.Frame(wrapper, bg=bg)
         has_condition = bool(col_var.get().strip())
 
         toggle_btn = tk.Button(
             header_row,
-            text="if..." if not has_condition else "\u2713 if...",
+            text="\u2713 if..." if has_condition else "if...",
             font=("Segoe UI", 7),
             relief="flat", bd=0, cursor="hand2",
             padx=5, pady=1,
@@ -197,13 +200,21 @@ class _FieldCard(tk.Frame):
             font=("Segoe UI", 6), fg=C["muted"], bg=bg,
         ).pack(side="left", padx=(5, 0))
 
-        # Detail row: two entry fields
+        HINT_COL = "e.g. grade"
+        HINT_VAL = "e.g. A"
+
+        # Detail row: two plain Entry widgets (no textvariable)
         entry_row = tk.Frame(detail, bg=bg)
         entry_row.pack(fill="x", pady=(3, 0))
 
-        def _entry(parent_frame, var, hint, width=9):
+        def _make_hint_entry(parent_frame, var, hint, width=9):
+            """
+            Entry that shows a greyed-out hint when empty.
+            Actual value is only written to var on Return / FocusOut so the
+            hint string can never accidentally pollute the condition check.
+            """
             e = tk.Entry(
-                parent_frame, textvariable=var,
+                parent_frame,
                 width=width,
                 font=("Segoe UI", 8),
                 bg=C["surface3"], fg=C["text"],
@@ -211,23 +222,41 @@ class _FieldCard(tk.Frame):
                 relief="flat", bd=0,
                 highlightthickness=1, highlightbackground=C["border"],
             )
-            e.insert(0, hint) if not var.get() else None
-            e.bind("<FocusIn>",  lambda ev, h=hint, v=var: (
-                e.delete(0, tk.END) if e.get() == h else None))
-            e.bind("<FocusOut>", lambda ev, h=hint, v=var: (
-                e.insert(0, h) if not e.get().strip() else None))
-            e.bind("<Return>",   lambda ev, f=field: update_cb(f))
-            e.bind("<FocusOut>", lambda ev, f=field: update_cb(f), add="+")
+
+            def _show_hint():
+                e.config(fg=C["muted"])
+                e.delete(0, tk.END)
+                e.insert(0, hint)
+
+            def _on_focus_in(_ev):
+                if e.get() == hint:
+                    e.config(fg=C["text"])
+                    e.delete(0, tk.END)
+
+            def _on_focus_out(_ev):
+                raw = e.get().strip()
+                if not raw or raw == hint:
+                    var.set("")
+                    _show_hint()
+                else:
+                    var.set(raw)
+                update_cb(field)
+
+            e.bind("<FocusIn>",  _on_focus_in)
+            e.bind("<FocusOut>", _on_focus_out)
+            e.bind("<Return>",   lambda _ev: _on_focus_out(_ev))
+
+            # Initialise: show real value from var or the hint
+            real = var.get().strip()
+            if real:
+                e.insert(0, real)
+                e.config(fg=C["text"])
+            else:
+                _show_hint()
+
             return e
 
-        tk.Label(entry_row, text="col", font=("Segoe UI", 7),
-                 fg=C["subtext"], bg=bg).pack(side="left")
-        _entry(entry_row, col_var, "e.g. grade").pack(side="left", padx=(3, 4))
-        tk.Label(entry_row, text="=", font=("Segoe UI", 8, "bold"),
-                 fg=C["subtext"], bg=bg).pack(side="left")
-        _entry(entry_row, val_var, "e.g. A").pack(side="left", padx=(4, 0))
-
-        def _refresh_toggle():
+        def _refresh_toggle(*_):
             active = bool(col_var.get().strip())
             toggle_btn.config(
                 text="\u2713 if..." if active else "if...",
@@ -235,7 +264,14 @@ class _FieldCard(tk.Frame):
                 fg=C["white"]      if active else C["subtext"],
             )
 
-        col_var.trace_add("write", lambda *_: _refresh_toggle())
+        col_var.trace_add("write", _refresh_toggle)
+
+        tk.Label(entry_row, text="col", font=("Segoe UI", 7),
+                 fg=C["subtext"], bg=bg).pack(side="left")
+        _make_hint_entry(entry_row, col_var, HINT_COL).pack(side="left", padx=(3, 4))
+        tk.Label(entry_row, text="=", font=("Segoe UI", 8, "bold"),
+                 fg=C["subtext"], bg=bg).pack(side="left")
+        _make_hint_entry(entry_row, val_var, HINT_VAL).pack(side="left", padx=(4, 0))
 
         # Show/hide detail on toggle
         _shown = [has_condition]
