@@ -1,6 +1,6 @@
 """
 Top navigation bar.
-Clean white bar with app title on the left and action buttons on the right.
+Clean light bar with app title on the left and action buttons on the right.
 No heavy borders -- just a single 1px bottom divider.
 """
 import tkinter as tk
@@ -11,6 +11,9 @@ from app.constants import (
     PAD_MD, PAD_SM,
 )
 
+# Navbar sits on the light surface, not the dark sidebar color.
+_BG = C["surface"]
+
 
 class NavBar(tk.Frame):
 
@@ -19,7 +22,7 @@ class NavBar(tk.Frame):
         save_cmd, load_cmd,
         load_template_cmd, load_excel_cmd,
     ):
-        super().__init__(parent, bg=C["nav"], height=48)
+        super().__init__(parent, bg=_BG, height=48)
         self.pack(fill="x")
         self.pack_propagate(False)
 
@@ -35,27 +38,25 @@ class NavBar(tk.Frame):
 
     # ------------------------------------------------------------------
     def _build(self, save_cmd, load_cmd, load_template_cmd, load_excel_cmd):
-        # -- left: logo + title
-        left = tk.Frame(self, bg=C["nav"])
+        # -- left: logo mark + title
+        left = tk.Frame(self, bg=_BG)
         left.pack(side="left", padx=(PAD_MD + 4, 0))
 
-        # simple geometric logo mark -- two overlapping rectangles
+        # geometric logo mark -- two overlapping rects, teal on light bg
         logo_canvas = tk.Canvas(
             left, width=22, height=22,
-            bg=C["nav"], highlightthickness=0,
+            bg=_BG, highlightthickness=0,
         )
         logo_canvas.pack(side="left", padx=(0, 8))
-        # background rect
         logo_canvas.create_rectangle(2, 6, 16, 20, fill=C["accent_dim"], outline="")
-        # foreground rect
-        logo_canvas.create_rectangle(7, 2, 21, 16, fill=C["accent"], outline="")
+        logo_canvas.create_rectangle(7, 2, 21, 16, fill=C["accent"],     outline="")
 
         tk.Label(
             left,
             text=APP_TITLE,
             font=(FONT_FAMILY_UI, FONT_SZ_LG, "bold"),
             fg=C["text"],
-            bg=C["nav"],
+            bg=_BG,
         ).pack(side="left")
 
         tk.Label(
@@ -63,12 +64,12 @@ class NavBar(tk.Frame):
             text=f"v{APP_VERSION}",
             font=(FONT_FAMILY_UI, FONT_SZ_SM),
             fg=C["muted"],
-            bg=C["nav"],
+            bg=_BG,
             padx=4,
         ).pack(side="left")
 
         # -- right: action buttons
-        right = tk.Frame(self, bg=C["nav"])
+        right = tk.Frame(self, bg=_BG)
         right.pack(side="right", padx=PAD_MD)
 
         actions = [
@@ -93,10 +94,10 @@ class NavBar(tk.Frame):
             else:
                 btn = tk.Button(
                     right, text=text, command=cmd,
-                    bg=C["nav"], fg=C["subtext"],
+                    bg=C["btn_idle"], fg=C["subtext"],
                     font=(FONT_FAMILY_UI, FONT_SZ_SM),
                     relief="flat", cursor="hand2",
-                    activebackground=C["btn_idle"],
+                    activebackground=C["surface3"],
                     activeforeground=C["text"],
                     bd=0, highlightthickness=0,
                     padx=10, pady=6,
