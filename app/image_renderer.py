@@ -12,6 +12,8 @@ Per-field controls:
   field_type (str)                  -- "text" | "qr" | "image"
   qr_size   (int, px)               -- QR bounding box side length
   img_size  (int, px)               -- image overlay bounding box side length
+  condition_col (str)               -- column to test for visibility (empty = always visible)
+  condition_val (str)               -- required cell value for the field to render
 """
 import io
 import os
@@ -39,6 +41,22 @@ def _get(var, default=""):
         return var.get()
     except AttributeError:
         return var if var is not None else default
+
+
+def _condition_passes(s: dict, student: dict) -> bool:
+    """
+    Return True if the field's render condition is satisfied.
+    A condition is defined by two settings:
+      condition_col -- which column to inspect  (empty string = no condition)
+      condition_val -- the value it must equal  (case-insensitive, stripped)
+    If condition_col is empty the field always renders.
+    """
+    col = _get(s.get("condition_col"), "").strip()
+    if not col:
+        return True
+    required = _get(s.get("condition_val"), "").strip().lower()
+    actual   = student.get(col.lower(), "").strip().lower()
+    return actual == required
 
 
 def _draw_text_layer(
@@ -106,8 +124,13 @@ def draw_text_on_image(
         if field not in positions:
             continue
         try:
+            s = font_settings[field]
+
+            # Skip if conditional visibility rule is not satisfied
+            if not _condition_passes(s, student):
+                continue
+
             x, y       = positions[field]
-            s          = font_settings[field]
             field_type = _get(s.get("field_type"), "text")
 
             if field_type == "qr":

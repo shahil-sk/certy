@@ -1,84 +1,99 @@
 """
-Project file save / load (.certy JSON).
-Version 2.7  --  adds img_size to persisted field settings.
+Project serialisation / deserialisation.
+Saves and loads .certy files (JSON under the hood).
+
+Version history:
+  2.0  initial
+  2.5  added qr_size
+  2.6  added active_sheet
+  2.7  added img_size
+  2.8  added condition_col / condition_val
 """
 import json
 import os
-from datetime import datetime
 
-from app.logger import get_logger
-
-log = get_logger(__name__)
-
-
-def _to_relative(asset_path: str, project_path: str) -> str:
-    if not asset_path:
-        return asset_path
-    try:
-        return os.path.relpath(asset_path, os.path.dirname(project_path))
-    except ValueError:
-        return asset_path
-
-
-def _to_absolute(asset_path: str, project_path: str) -> str:
-    if not asset_path:
-        return asset_path
-    if os.path.isabs(asset_path):
-        return asset_path
-    return os.path.normpath(
-        os.path.join(os.path.dirname(project_path), asset_path)
-    )
+FORMAT_VERSION = "2.8"
 
 
 def serialise(
-    template_path, excel_path, color_space,
-    positions, fields, font_settings, field_vars,
-    filename_pattern="",
-    project_path="",
+    template_path: str,
+    excel_path: str,
+    color_space: str,
+    positions: dict,
+    fields: list,
+    font_settings: dict,
+    field_vars: dict,
+    filename_pattern: str = "",
+    project_path: str = "",
+    active_sheet: str = "",
 ) -> dict:
-    def _get(var, default=None):
-        try:    return var.get()
-        except: return default
+    """
+    Convert all in-memory state to a plain JSON-serialisable dict.
+    Paths are stored relative to the project file location when possible.
+    """
+    base = os.path.dirname(os.path.abspath(project_path)) if project_path else ""
+
+    def _rel(p):
+        if not p or not base:
+            return p
+        try:
+            return os.path.relpath(p, base)
+        except ValueError:
+            return p  # different drive on Windows
+
+    field_data = {}
+    for f in fields:
+        s   = font_settings.get(f, {})
+        vis = field_vars.get(f)
+        field_data[f] = {
+            "visible":       vis.get() if hasattr(vis, "get") else bool(vis),
+            "size":          s["size"].get()          if "size"          in s else 32,
+            "color":         s["color"].get()         if "color"         in s else "#000000",
+            "font_name":     s["font_name"].get()     if "font_name"     in s else "",
+            "align":         s["align"].get()         if "align"         in s else "center",
+            "opacity":       s["opacity"].get()       if "opacity"       in s else 100,
+            "shadow":        s["shadow"].get()        if "shadow"        in s else False,
+            "shadow_offset": s["shadow_offset"].get() if "shadow_offset" in s else 4,
+            "outline":       s["outline"].get()       if "outline"       in s else False,
+            "outline_width": s["outline_width"].get() if "outline_width" in s else 2,
+            "field_type":    s["field_type"].get()    if "field_type"    in s else "text",
+            "qr_size":       s["qr_size"].get()       if "qr_size"       in s else 120,
+            "img_size":      s["img_size"].get()      if "img_size"      in s else 120,
+            "condition_col": s["condition_col"].get() if "condition_col" in s else "",
+            "condition_val": s["condition_val"].get() if "condition_val" in s else "",
+        }
 
     return {
-        "version":          "2.7",
-        "last_modified":    datetime.now().isoformat(),
-        "template_path":    _to_relative(template_path, project_path),
-        "excel_path":       _to_relative(excel_path,    project_path),
+        "version":          FORMAT_VERSION,
+        "template_path":    _rel(template_path),
+        "excel_path":       _rel(excel_path),
+        "active_sheet":     active_sheet,
         "color_space":      color_space,
         "filename_pattern": filename_pattern,
-        "positions":        positions,
-        "field_settings":   {
-            f: {
-                "size":          _get(font_settings[f]["size"],         32),
-                "color":         _get(font_settings[f]["color"],        "#000000"),
-                "visible":       _get(field_vars[f],                    True),
-                "font_name":     _get(font_settings[f]["font_name"],    ""),
-                "align":         _get(font_settings[f]["align"],        "center"),
-                "opacity":       _get(font_settings[f].get("opacity"),  100),
-                "shadow":        _get(font_settings[f].get("shadow"),   False),
-                "shadow_offset": _get(font_settings[f].get("shadow_offset"), 4),
-                "outline":       _get(font_settings[f].get("outline"),  False),
-                "outline_width": _get(font_settings[f].get("outline_width"), 2),
-                "field_type":    _get(font_settings[f].get("field_type"), "text"),
-                "qr_size":       _get(font_settings[f].get("qr_size"),  120),
-                "img_size":      _get(font_settings[f].get("img_size"), 120),
-            }
-            for f in fields
-        },
+        "positions":        {k: list(v) for k, v in positions.items()},
+        "fields":           fields,
+        "field_settings":   field_data,
     }
 
 
 def save(path: str, data: dict) -> None:
     with open(path, "w", encoding="utf-8") as fh:
-        json.dump(data, fh, indent=2)
-    log.info("project saved to '%s'", path)
+        json.dump(data, fh, indent=2, ensure_ascii=False)
 
 
 def load(path: str) -> dict:
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
-    for key in ("template_path", "excel_path"):
-        data[key] = _to_absolute(data.get(key, ""), path)
-    log.info("project loaded from '%s' (version %s)", path, data.get("version", "?"))
+
+    base = os.path.dirname(os.path.abspath(path))
+
+    def _abs(p):
+        if not p:
+            return p
+        if os.path.isabs(p):
+            return p
+        return os.path.normpath(os.path.join(base, p))
+
+    data["template_path"] = _abs(data.get("template_path", ""))
+    data["excel_path"]    = _abs(data.get("excel_path",    ""))
     return data

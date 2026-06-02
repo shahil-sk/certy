@@ -51,6 +51,9 @@ def _make_field_settings(default_font: str) -> dict:
         "qr_size":        tk.IntVar(value=_DEFAULT_QR_SIZE),
         # image overlay rendering
         "img_size":       tk.IntVar(value=_DEFAULT_IMG_SIZE),
+        # conditional visibility
+        "condition_col":  tk.StringVar(value=""),
+        "condition_val":  tk.StringVar(value=""),
     }
 
 
@@ -161,7 +164,7 @@ class CertificateApp:
         if not file_path:
             return
 
-        # -- Sheet selection for xlsx workbooks
+        # Sheet selection for xlsx workbooks
         chosen_sheet = sheet_name
         if file_path.lower().endswith(".xlsx"):
             try:
@@ -174,14 +177,13 @@ class CertificateApp:
                 dlg = SheetPickerDialog(self.root, names)
                 self.root.wait_window(dlg)
                 if dlg.result is None:
-                    return  # user cancelled
+                    return
                 chosen_sheet = dlg.result
 
-            # Single-sheet workbooks: just use the active sheet
             if not chosen_sheet and names:
                 chosen_sheet = names[0]
 
-        # -- Read data
+        # Read data
         try:
             if chosen_sheet:
                 header, rows = excel_loader.read_sheet(file_path, chosen_sheet)
@@ -354,7 +356,6 @@ class CertificateApp:
         try:
             data = project_io.load(path)
             self.load_template(data.get("template_path"))
-            # Pass saved sheet name so picker dialog is skipped on restore
             self.load_excel(
                 data.get("excel_path"),
                 sheet_name=data.get("active_sheet", ""),
@@ -380,6 +381,8 @@ class CertificateApp:
                 if "field_type"    in s: s["field_type"].set(settings.get("field_type", "text"))
                 if "qr_size"       in s: s["qr_size"].set(settings.get("qr_size", _DEFAULT_QR_SIZE))
                 if "img_size"      in s: s["img_size"].set(settings.get("img_size", _DEFAULT_IMG_SIZE))
+                if "condition_col" in s: s["condition_col"].set(settings.get("condition_col", ""))
+                if "condition_val" in s: s["condition_val"].set(settings.get("condition_val", ""))
             self._field_list.rebuild(
                 self.fields, self.field_vars, self.font_settings,
                 list(self.available_fonts.keys()),

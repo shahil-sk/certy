@@ -6,8 +6,8 @@ Each field card exposes three render modes:
   qr    -- QR code sized by a pixel-size spinner
   image -- per-row image overlay sized by a pixel-size spinner
 
-Toggling QR or IMG swaps the visible controls in-place without
-reflowing the whole list.
+Each card also has an optional condition row:
+  "if [column] == [value]"  -- field is only rendered when the condition holds
 """
 import tkinter as tk
 from tkinter import ttk
@@ -126,7 +126,10 @@ class _FieldCard(tk.Frame):
             20, 800, update_cb, bg)
         self._build_opacity_row(img_frame, field, s, update_cb, bg)
 
-        # Map mode → its frame
+        # Condition row is shared across all field types
+        self._build_condition_row(pad, field, s, update_cb, bg)
+
+        # Map mode -> its frame
         _frames = {"text": text_frame, "qr": qr_frame, "image": img_frame}
 
         def _show_mode(mode):
@@ -136,7 +139,6 @@ class _FieldCard(tk.Frame):
                 else:
                     f.pack_forget()
 
-        # Set initial visibility
         _show_mode(cur_type)
 
         def _switch(new_type, f=field):
@@ -154,6 +156,102 @@ class _FieldCard(tk.Frame):
 
         qr_btn.config( command=lambda: _switch("text" if ft_var.get() == "qr"    else "qr"))
         img_btn.config(command=lambda: _switch("text" if ft_var.get() == "image" else "image"))
+
+    # ------------------------------------------------------------------
+    def _build_condition_row(self, parent, field, s, update_cb, bg):
+        """
+        Collapsible row that lets the user write an "if col == val" rule.
+        When condition_col is empty the field always renders (default).
+        """
+        col_var = s.get("condition_col")
+        val_var = s.get("condition_val")
+        if col_var is None or val_var is None:
+            return
+
+        wrapper = tk.Frame(parent, bg=bg)
+        wrapper.pack(fill="x", pady=(4, 0))
+
+        header_row = tk.Frame(wrapper, bg=bg)
+        header_row.pack(fill="x")
+
+        # "if..." button toggles the detail row
+        detail = tk.Frame(wrapper, bg=bg)
+        has_condition = bool(col_var.get().strip())
+
+        toggle_btn = tk.Button(
+            header_row,
+            text="if..." if not has_condition else "\u2713 if...",
+            font=("Segoe UI", 7),
+            relief="flat", bd=0, cursor="hand2",
+            padx=5, pady=1,
+            bg=C["btn_active"] if has_condition else C["btn_idle"],
+            fg=C["white"]      if has_condition else C["subtext"],
+            activebackground=C["accent2"],
+            activeforeground=C["white"],
+        )
+        toggle_btn.pack(side="left")
+
+        tk.Label(
+            header_row,
+            text="show only when column = value",
+            font=("Segoe UI", 6), fg=C["muted"], bg=bg,
+        ).pack(side="left", padx=(5, 0))
+
+        # Detail row: two entry fields
+        entry_row = tk.Frame(detail, bg=bg)
+        entry_row.pack(fill="x", pady=(3, 0))
+
+        def _entry(parent_frame, var, hint, width=9):
+            e = tk.Entry(
+                parent_frame, textvariable=var,
+                width=width,
+                font=("Segoe UI", 8),
+                bg=C["surface3"], fg=C["text"],
+                insertbackground=C["accent"],
+                relief="flat", bd=0,
+                highlightthickness=1, highlightbackground=C["border"],
+            )
+            e.insert(0, hint) if not var.get() else None
+            e.bind("<FocusIn>",  lambda ev, h=hint, v=var: (
+                e.delete(0, tk.END) if e.get() == h else None))
+            e.bind("<FocusOut>", lambda ev, h=hint, v=var: (
+                e.insert(0, h) if not e.get().strip() else None))
+            e.bind("<Return>",   lambda ev, f=field: update_cb(f))
+            e.bind("<FocusOut>", lambda ev, f=field: update_cb(f), add="+")
+            return e
+
+        tk.Label(entry_row, text="col", font=("Segoe UI", 7),
+                 fg=C["subtext"], bg=bg).pack(side="left")
+        _entry(entry_row, col_var, "e.g. grade").pack(side="left", padx=(3, 4))
+        tk.Label(entry_row, text="=", font=("Segoe UI", 8, "bold"),
+                 fg=C["subtext"], bg=bg).pack(side="left")
+        _entry(entry_row, val_var, "e.g. A").pack(side="left", padx=(4, 0))
+
+        def _refresh_toggle():
+            active = bool(col_var.get().strip())
+            toggle_btn.config(
+                text="\u2713 if..." if active else "if...",
+                bg=C["btn_active"] if active else C["btn_idle"],
+                fg=C["white"]      if active else C["subtext"],
+            )
+
+        col_var.trace_add("write", lambda *_: _refresh_toggle())
+
+        # Show/hide detail on toggle
+        _shown = [has_condition]
+
+        def _toggle_detail():
+            if _shown[0]:
+                detail.pack_forget()
+                _shown[0] = False
+            else:
+                detail.pack(fill="x")
+                _shown[0] = True
+
+        if has_condition:
+            detail.pack(fill="x")
+
+        toggle_btn.config(command=_toggle_detail)
 
     # ------------------------------------------------------------------
     def _build_text_controls(self, parent, field, s,
