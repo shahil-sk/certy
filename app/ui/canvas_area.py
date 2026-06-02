@@ -296,6 +296,23 @@ class CanvasArea(tk.Frame):
             for f, d in self._placeholders.items()
         }
 
+    def set_scaled_positions(self, positions: dict) -> None:
+        """
+        Restore placeholder positions from saved original-image coordinates.
+
+        Inverse of get_scaled_positions:
+            canvas_pos = original_px / scale * zoom
+
+        Must be called after load_image so scale_x/scale_y are valid.
+        """
+        for field, coords in positions.items():
+            ox, oy = coords
+            cx = ox / self._scale_x * self._zoom
+            cy = oy / self._scale_y * self._zoom
+            # Store without a canvas item; _redraw_image will draw them
+            self._placeholders[field] = {"item": None, "x": cx, "y": cy}
+        self._redraw_image()
+
     def clear(self) -> None:
         self._canvas.delete("all")
         self._placeholders.clear()
