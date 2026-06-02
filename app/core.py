@@ -136,7 +136,7 @@ class CertificateApp:
             for f in self.fields:
                 self._canvas_area.create_placeholder(f)
             self._status(
-                f"Template loaded  ·  {os.path.basename(file_path)}  ·  {w}×{h} px")
+                f"Template loaded  \u00b7  {os.path.basename(file_path)}  \u00b7  {w}\u00d7{h} px")
         except Exception as exc:
             messagebox.showerror("Error", f"Cannot load template:\n{exc}")
 
@@ -178,11 +178,11 @@ class CertificateApp:
         ext = os.path.splitext(file_path)[1].upper()
         fname = os.path.basename(file_path)
         self._status(
-            f"{ext} loaded  ·  {fname}  ·  {len(rows)} records  ·  {len(header)} fields")
+            f"{ext} loaded  \u00b7  {fname}  \u00b7  {len(rows)} records  \u00b7  {len(header)} fields")
 
     def _on_field_update(self, field):
         self._canvas_area.update_placeholder(field)
-        self._status(f"Field updated  ·  {field}")
+        self._status(f"Field updated  \u00b7  {field}")
 
     def _on_pick_color(self, field):
         if self.color_space.get() == "RGB":
@@ -225,14 +225,14 @@ class CertificateApp:
         use_cmyk = messagebox.askyesno(
             "Output colour mode",
             "Generate certificates in CMYK colour mode?\n\n"
-            "  Yes  →  CMYK  (recommended for professional printing)\n"
-            "  No   →  RGB   (recommended for screen / digital use)")
+            "  Yes  \u2192  CMYK  (recommended for professional printing)\n"
+            "  No   \u2192  RGB   (recommended for screen / digital use)")
         self.color_space.set("CMYK" if use_cmyk else "RGB")
         out_dir = filedialog.askdirectory(title="Select output folder")
         if not out_dir:
             self._gen_lock.release(); return
 
-        self._status("Generating certificates…", ok=True)
+        self._status("Generating certificates\u2026", ok=True)
         generator.run(
             excel_data=self.excel_data,
             fields=self.fields,
@@ -250,10 +250,10 @@ class CertificateApp:
                 0, lambda m=msg, c=clr: self._panel.append_log(m, c)),
             on_done=lambda cnt, tot: self.root.after(
                 0, lambda: (
-                    self._status(f"Done  ·  {cnt} certificate(s) saved to {os.path.basename(out_dir)}/"),
+                    self._status(f"Done  \u00b7  {cnt} certificate(s) saved to {os.path.basename(out_dir)}/"),
                     messagebox.showinfo(
-                        "Certy — Done",
-                        f"✓  {cnt} certificate(s) generated successfully!\n\nSaved to:\n{out_dir}")
+                        "Certy \u2014 Done",
+                        f"\u2713  {cnt} certificate(s) generated successfully!\n\nSaved to:\n{out_dir}")
                 )),
             lock=self._gen_lock,
         )
@@ -263,6 +263,14 @@ class CertificateApp:
         if not self.original_image:
             messagebox.showwarning("Warning", "No template loaded."); return
         try:
+            # Ask for the save path first so we can pass it to serialise
+            # for relative-path calculation.
+            path = filedialog.asksaveasfilename(
+                defaultextension=".certy",
+                filetypes=[("Certy Project", "*.certy")])
+            if not path:
+                return
+
             data = project_io.serialise(
                 template_path=self.template_path,
                 excel_path=self.excel_path,
@@ -272,14 +280,11 @@ class CertificateApp:
                 font_settings=self.font_settings,
                 field_vars=self.field_vars,
                 filename_pattern=self._panel.filename_pattern.get(),
+                project_path=path,
             )
-            path = filedialog.asksaveasfilename(
-                defaultextension=".certy",
-                filetypes=[("Certy Project", "*.certy")])
-            if path:
-                project_io.save(path, data)
-                self._status(f"Project saved  ·  {os.path.basename(path)}")
-                messagebox.showinfo("Saved", f"Project saved successfully.\n\n{path}")
+            project_io.save(path, data)
+            self._status(f"Project saved  \u00b7  {os.path.basename(path)}")
+            messagebox.showinfo("Saved", f"Project saved successfully.\n\n{path}")
         except Exception as exc:
             messagebox.showerror("Error", f"Save failed:\n{exc}")
 
@@ -288,6 +293,7 @@ class CertificateApp:
             filetypes=[("Certy Project", "*.certy")])
         if not path: return
         try:
+            # project_io.load already resolves relative paths to absolute
             data = project_io.load(path)
             self.load_template(data.get("template_path"))
             self.load_excel(data.get("excel_path"))
@@ -322,6 +328,6 @@ class CertificateApp:
             )
             for f in self.fields:
                 self._canvas_area.update_placeholder(f)
-            self._status(f"Project loaded  ·  {os.path.basename(path)}")
+            self._status(f"Project loaded  \u00b7  {os.path.basename(path)}")
         except Exception as exc:
             messagebox.showerror("Error", f"Load failed:\n{exc}")
