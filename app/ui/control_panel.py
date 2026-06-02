@@ -8,7 +8,7 @@ from app.constants import C, SIDEBAR_W
 from app.ui.widgets import label, hsep
 
 # Supported output formats; first entry is the default.
-_OUTPUT_FORMATS = ["PDF", "PNG", "JPEG"]
+_OUTPUT_FORMATS = ["PDF", "PNG", "JPEG", "WebP"]
 
 
 class ControlPanel(tk.Frame):
@@ -18,7 +18,7 @@ class ControlPanel(tk.Frame):
       self.progress          -- ttk.Progressbar
       self.info_text         -- tk.Text log
       self.filename_pattern  -- tk.StringVar  (e.g. "{name}_{date}")
-      self.output_format     -- tk.StringVar  ("PDF" | "PNG" | "JPEG")
+      self.output_format     -- tk.StringVar  ("PDF" | "PNG" | "JPEG" | "WebP")
     """
 
     def __init__(self, parent, preview_cmd, generate_cmd):
@@ -37,7 +37,7 @@ class ControlPanel(tk.Frame):
 
     # ------------------------------------------------------------------
     def _build(self, preview_cmd, generate_cmd):
-        # ── Header
+        # Header
         hdr = tk.Frame(self, bg=C["surface"], pady=12)
         hdr.pack(fill="x", padx=16)
         tk.Label(hdr, text="\u25a3  Fields",
@@ -45,13 +45,13 @@ class ControlPanel(tk.Frame):
                  fg=C["text"], bg=C["surface"]).pack(side="left")
         hsep(self, padx=0, pady=0)
 
-        # ── Field list injection point
+        # Field list injection point
         self.fields_frame = tk.Frame(self, bg=C["surface"])
         self.fields_frame.pack(fill="x")
 
         hsep(self, padx=0, pady=0)
 
-        # ── Filename pattern row
+        # Filename pattern row
         fn_wrap = tk.Frame(self, bg=C["surface"], pady=8)
         fn_wrap.pack(fill="x", padx=14)
         fn_top = tk.Frame(fn_wrap, bg=C["surface"])
@@ -75,7 +75,7 @@ class ControlPanel(tk.Frame):
 
         hsep(self, padx=0, pady=0)
 
-        # ── Output format selector
+        # Output format selector
         fmt_wrap = tk.Frame(self, bg=C["surface"], pady=8)
         fmt_wrap.pack(fill="x", padx=14)
         tk.Label(fmt_wrap, text="\U0001f5c2  Output format",
@@ -90,17 +90,26 @@ class ControlPanel(tk.Frame):
                 btn_row, text=fmt,
                 font=("Segoe UI", 8, "bold"),
                 relief="flat", bd=0, cursor="hand2",
-                padx=10, pady=5,
+                padx=8, pady=5,
                 command=lambda f=fmt: self._select_format(f),
             )
-            btn.pack(side="left", expand=True, fill="x", padx=(0, 4))
+            btn.pack(side="left", expand=True, fill="x", padx=(0, 3))
             self._fmt_buttons[fmt] = btn
-        # Highlight the default selection
         self._select_format(_OUTPUT_FORMATS[0])
+
+        # Format hint line (updates when selection changes)
+        self._fmt_hint_var = tk.StringVar()
+        tk.Label(
+            fmt_wrap,
+            textvariable=self._fmt_hint_var,
+            font=("Segoe UI", 7), fg=C["muted"], bg=C["surface"],
+            anchor="w",
+        ).pack(fill="x", pady=(4, 0))
+        self._update_hint(_OUTPUT_FORMATS[0])
 
         hsep(self, padx=0, pady=0)
 
-        # ── Action buttons
+        # Action buttons
         btn_area = tk.Frame(self, bg=C["surface"], pady=10)
         btn_area.pack(fill="x", padx=14)
 
@@ -127,7 +136,7 @@ class ControlPanel(tk.Frame):
             padx=14, pady=8,
         ).pack(side="left", fill="x", expand=True)
 
-        # ── Progress bar
+        # Progress bar
         prog_wrap = tk.Frame(self, bg=C["surface"])
         prog_wrap.pack(fill="x", padx=14, pady=(0, 10))
         self.progress = ttk.Progressbar(
@@ -138,7 +147,7 @@ class ControlPanel(tk.Frame):
 
         hsep(self, padx=0, pady=0)
 
-        # ── Log header
+        # Log header
         log_hdr = tk.Frame(self, bg=C["surface"], pady=8)
         log_hdr.pack(fill="x", padx=14)
         tk.Label(log_hdr, text="\u29c9  Log",
@@ -154,7 +163,7 @@ class ControlPanel(tk.Frame):
             activeforeground=C["subtext"],
         ).pack(side="right")
 
-        # ── Log text
+        # Log text
         log_wrap = tk.Frame(self, bg=C["surface"])
         log_wrap.pack(fill="both", expand=True, padx=14, pady=(0, 14))
 
@@ -181,8 +190,14 @@ class ControlPanel(tk.Frame):
         self.info_text.tag_configure("warn", foreground=C["warning"])
 
     # ------------------------------------------------------------------
+    _FMT_HINTS = {
+        "PDF":  "Vector container. Best for printing.",
+        "PNG":  "Lossless. Best for archiving.",
+        "JPEG": "Compressed. Smallest file size.",
+        "WebP": "Modern lossy. Best for web / social.",
+    }
+
     def _select_format(self, fmt: str) -> None:
-        """Update the format var and re-style all format buttons."""
         self.output_format.set(fmt)
         for name, btn in self._fmt_buttons.items():
             active = name == fmt
@@ -192,6 +207,14 @@ class ControlPanel(tk.Frame):
                 activebackground=C["accent2"] if active else C["surface3"],
                 activeforeground=C["white"]   if active else C["text"],
             )
+        self._update_hint(fmt)
+
+    def _update_hint(self, fmt: str) -> None:
+        hint = self._FMT_HINTS.get(fmt, "")
+        try:
+            self._fmt_hint_var.set(hint)
+        except AttributeError:
+            pass  # called before the label is created during init
 
     def append_log(self, msg: str, clear: bool = False) -> None:
         self.info_text.configure(state="normal")

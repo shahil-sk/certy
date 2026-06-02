@@ -3,9 +3,10 @@ Certificate generation worker.
 Runs on a background thread; communicates back via callbacks.
 
 Supported output formats:
-  PDF   -- vector container wrapping the rendered PNG (default)
-  PNG   -- lossless raster, best for digital sharing
+  PDF   -- vector container wrapping the rendered PNG
+  PNG   -- lossless raster
   JPEG  -- compressed raster, smallest file size
+  WebP  -- modern lossy/lossless, best for web sharing
 """
 import io
 import os
@@ -23,8 +24,8 @@ log = get_logger(__name__)
 
 _TOKEN_RE = re.compile(r"\{(\w+)\}")
 
-# JPEG quality setting (0-95; 85 is a good balance of size vs fidelity)
 _JPEG_QUALITY = 85
+_WEBP_QUALITY = 88  # 0-100; 88 gives good fidelity at ~40% of JPEG size
 
 
 def _build_filename(pattern: str, student: dict, idx: int, fields: list) -> str:
@@ -50,16 +51,12 @@ def _find_duplicates(excel_data: list, fields: list) -> list:
 
 
 def inject_serial(excel_data: list) -> list:
-    """
-    Return a copy of excel_data with a 'serial' key added to each row.
-    Does not modify the original list.
-    """
+    """Return a copy of excel_data with a 'serial' key added to every row."""
     return [{**row, "serial": str(i + 1).zfill(3)}
             for i, row in enumerate(excel_data)]
 
 
 def _save_pdf(img: Image.Image, dest: str, pdf_w: float, pdf_h: float) -> None:
-    """Embed the rendered image into a PDF page and write to dest."""
     from fpdf import FPDF
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
@@ -70,12 +67,12 @@ def _save_pdf(img: Image.Image, dest: str, pdf_w: float, pdf_h: float) -> None:
     pdf.output(dest)
 
 
-def _save_png(img: Image.Image, dest: str) -> None:
+def _save_png(img: Image.Image, dest: str, **_) -> None:
     img.save(dest, format="PNG", optimize=True)
 
 
-def _save_jpeg(img: Image.Image, dest: str) -> None:
-    # JPEG does not support an alpha channel, flatten to white background first.
+def _save_jpeg(img: Image.Image, dest: str, **_) -> None:
+    # JPEG has no alpha channel; flatten onto white.
     if img.mode in ("RGBA", "LA"):
         bg = Image.new("RGB", img.size, (255, 255, 255))
         bg.paste(img, mask=img.split()[-1])
@@ -85,11 +82,17 @@ def _save_jpeg(img: Image.Image, dest: str) -> None:
     img.save(dest, format="JPEG", quality=_JPEG_QUALITY, optimize=True)
 
 
-# Maps format name -> (file extension, save function)
+def _save_webp(img: Image.Image, dest: str, **_) -> None:
+    # WebP supports RGBA natively, so no flattening needed.
+    img.save(dest, format="WEBP", quality=_WEBP_QUALITY, method=6)
+
+
+# Maps format name -> (file extension, save callable)
 _FORMAT_HANDLERS = {
     "PDF":  (".pdf",  _save_pdf),
     "PNG":  (".png",  _save_png),
     "JPEG": (".jpg",  _save_jpeg),
+    "WEBP": (".webp", _save_webp),
 }
 
 
@@ -109,6 +112,7 @@ def run(
     lock: threading.Lock,
     filename_pattern: str = "",
     output_format: str = "PDF",
+    excel_dir: str = "",
 ) -> None:
     sub      = color_mode
     total    = len(excel_data)
@@ -118,9 +122,9 @@ def run(
     out_sub  = os.path.join(out_dir, sub)
     os.makedirs(out_sub, exist_ok=True)
 
-    fmt       = output_format.upper()
-    ext, _    = _FORMAT_HANDLERS.get(fmt, _FORMAT_HANDLERS["PDF"])
-    enriched  = inject_serial(excel_data)
+    fmt      = output_format.upper()
+    ext, _   = _FORMAT_HANDLERS.get(fmt, _FORMAT_HANDLERS["PDF"])
+    enriched = inject_serial(excel_data)
     all_fields = fields + (["serial"] if "serial" not in fields else [])
 
     def _worker():
@@ -151,6 +155,7 @@ def run(
                     original_image.copy().convert("RGB"),
                     all_fields, field_vars, font_settings,
                     available_fonts, student, positions,
+                    excel_dir=excel_dir,
                 )
                 name = _build_filename(filename_pattern, student, idx, fields)
                 dest = os.path.join(out_sub, f"{name}_certificate{ext}")
