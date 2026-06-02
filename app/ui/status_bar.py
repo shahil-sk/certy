@@ -1,39 +1,45 @@
 """
-Thin status bar at the bottom of the window.
+Bottom status bar.
+Single line, warm neutral background, left-aligned message.
 """
 import tkinter as tk
 
-from app.constants import C
+from app.constants import C, FONT_FAMILY_UI, FONT_SZ_SM, PAD_SM, PAD_MD
 
 
 class StatusBar(tk.Frame):
 
     def __init__(self, parent):
-        super().__init__(parent, bg=C["nav"], height=26)
+        super().__init__(parent, bg=C["surface2"], height=26)
         self.pack(side="bottom", fill="x")
         self.pack_propagate(False)
 
-        # Left dot indicator
-        self._dot = tk.Label(
-            self, text="●", font=("Segoe UI", 8),
-            fg=C["success"], bg=C["nav"],
-        )
-        self._dot.pack(side="left", padx=(12, 4))
+        # 1-px top border
+        tk.Frame(parent, bg=C["border"], height=1).pack(side="bottom", fill="x")
 
         self._var = tk.StringVar(value="Ready")
-        tk.Label(
-            self, textvariable=self._var,
-            bg=C["nav"], fg=C["subtext"],
-            font=("Segoe UI", 8), anchor="w",
-        ).pack(side="left", fill="x", expand=True)
+        self._dot = tk.Label(
+            self, text="●",
+            font=(FONT_FAMILY_UI, 8),
+            fg=C["muted"], bg=C["surface2"],
+        )
+        self._dot.pack(side="left", padx=(PAD_MD, 4), pady=0)
 
-        # Right: version badge
-        tk.Label(
-            self, text="Certy",
-            bg=C["nav"], fg=C["muted"],
-            font=("Segoe UI", 7), anchor="e", padx=12,
-        ).pack(side="right")
+        self._lbl = tk.Label(
+            self,
+            textvariable=self._var,
+            font=(FONT_FAMILY_UI, FONT_SZ_SM),
+            fg=C["subtext"],
+            bg=C["surface2"],
+            anchor="w",
+        )
+        self._lbl.pack(side="left", fill="x", expand=True)
 
     def set(self, msg: str, ok: bool = True) -> None:
         self._var.set(msg)
-        self._dot.config(fg=C["success"] if ok else C["warning"])
+        if ok:
+            self._dot.config(fg=C["success"])
+            self._lbl.config(fg=C["subtext"])
+        else:
+            self._dot.config(fg=C["danger"])
+            self._lbl.config(fg=C["danger"])

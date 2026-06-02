@@ -1,56 +1,58 @@
 # ---------------------------------------------------------------------------
-# Theme palette  —  "Obsidian Studio v4"
-# Refined high-contrast dark theme for better visibility & readability
+# Theme palette  --  "Warm Neutral"
+# Clean, crisp, modern. Warm beige surfaces, single teal accent.
+# Inspired by Notion / Linear light mode. No glassmorphism, no thick borders.
 # ---------------------------------------------------------------------------
 
 C = {
-    # ── backgrounds ─────────────────────────────────────────────────────────
-    "bg":         "#07090d",   # richer deep black
-    "surface":    "#10141c",   # clearer separation
-    "surface2":   "#171c26",
-    "surface3":   "#1f2633",
-    "nav":        "#0b0d12",
-    "canvas_bg":  "#0d1017",
+    # -- backgrounds ---------------------------------------------------------
+    "bg":         "#f7f6f3",   # warm off-white page background
+    "surface":    "#ffffff",   # primary card / panel surface
+    "surface2":   "#f3f2ef",   # slightly recessed surface (sidebar, rows)
+    "surface3":   "#eceae5",   # deeper recess (inputs, code blocks)
+    "nav":        "#ffffff",   # top nav bar
+    "canvas_bg":  "#e8e6e0",   # canvas workspace background
 
-    # ── accents ──────────────────────────────────────────────────────────────
-    "accent":     "#7c84ff",   # brighter indigo for visibility
-    "accent2":    "#6670ff",
-    "accent3":    "#9aa3ff",
-    "accent_dim": "#232a5a",
-    "accent_glow":"#7c84ff35",
+    # -- accent (single teal) ------------------------------------------------
+    "accent":     "#0f7b6c",   # primary teal CTA
+    "accent2":    "#0d6b5d",   # hover
+    "accent3":    "#3da899",   # softer teal for badges / highlights
+    "accent_dim": "#d4ede9",   # teal-tinted surface (selected rows, etc.)
+    "accent_glow":"#0f7b6c18", # very faint teal wash
 
-    "success":    "#36e0aa",
-    "success2":   "#20c997",
-    "success_dim":"#103329",
+    "success":    "#2d8a4e",
+    "success2":   "#247a42",
+    "success_dim":"#dff3e7",
 
-    "danger":     "#ff7575",
-    "danger2":    "#ff5c5c",
-    "danger_dim": "#341818",
+    "danger":     "#c0392b",
+    "danger2":    "#a93226",
+    "danger_dim": "#fae5e3",
 
-    "warning":    "#ffd45a",
-    "warning_dim":"#33260f",
+    "warning":    "#b7670a",
+    "warning_dim":"#fdf0dc",
 
-    # ── text ─────────────────────────────────────────────────────────────────
-    "text":       "#f5f7ff",   # brighter white for readability
-    "subtext":    "#aab3c5",   # easier-to-read secondary text
-    "muted":      "#5d667c",   # visible placeholders
-    "text_inv":   "#05060a",
+    # -- text ----------------------------------------------------------------
+    "text":       "#1a1916",   # near-black, warm tint
+    "subtext":    "#6b6860",   # secondary labels
+    "muted":      "#b0aca3",   # placeholder, disabled
+    "text_inv":   "#ffffff",   # text on dark/accent backgrounds
 
-    # ── borders & structure ─────────────────────────────────────────────────
-    "border":     "#2b3242",
-    "border2":    "#3a4358",
-    "row_alt":    "#141a24",
-    "log_bg":     "#090b10",
+    # -- borders & dividers --------------------------------------------------
+    # single-pixel dividers only; no thick borders
+    "border":     "#e0ddd7",   # standard divider
+    "border2":    "#cbc8c1",   # slightly stronger (focus rings, etc.)
+    "row_alt":    "#f9f8f5",   # alternating table row tint
+    "log_bg":     "#f3f2ef",
     "white":      "#ffffff",
 
-    # ── interactive states ──────────────────────────────────────────────────
-    "btn_idle":   "#1c2230",
-    "btn_hover":  "#2a3245",
-    "btn_active": "#7c84ff",
-    "btn_press":  "#6670ff",
+    # -- interactive states --------------------------------------------------
+    "btn_idle":   "#f0efe9",   # secondary button default
+    "btn_hover":  "#e6e4de",   # secondary button hover
+    "btn_active": "#0f7b6c",   # primary button (accent)
+    "btn_press":  "#0d6b5d",   # primary button pressed
 
-    # ── shadows ─────────────────────────────────────────────────────────────
-    "shadow":     "#030407",
+    # -- shadows (soft, warm-tinted) -----------------------------------------
+    "shadow":     "#c8c5bc",
 }
 
 APP_TITLE          = "Certy"
@@ -60,21 +62,21 @@ CANVAS_MAX_W       = 1100
 CANVAS_MAX_H       = 750
 PX_TO_MM           = 0.264583
 DEFAULT_FONT_SIZE  = 32
-SIDEBAR_W          = 330
+SIDEBAR_W          = 340
 
-# ── spacing ────────────────────────────────────────────────────────────────
+# -- spacing -----------------------------------------------------------------
 PAD_XS   = 2
 PAD_SM   = 6
 PAD_MD   = 12
 PAD_LG   = 20
 PAD_XL   = 32
 
-# ── radius ─────────────────────────────────────────────────────────────────
+# -- radius ------------------------------------------------------------------
 RADIUS_SM = 4
-RADIUS_MD = 8
-RADIUS_LG = 12
+RADIUS_MD = 6
+RADIUS_LG = 10
 
-# ── typography ─────────────────────────────────────────────────────────────
+# -- typography --------------------------------------------------------------
 FONT_FAMILY_UI   = "Segoe UI"
 FONT_FAMILY_MONO = "Cascadia Code"
 
