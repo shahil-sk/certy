@@ -1,3 +1,8 @@
 pillow>=10.0.0
 openpyxl>=3.1.0
 fpdf2>=2.7.0
+
+# Optional — needed only for QR code fields.
+# Install with:  pip install qrcode[pil]
+# Without this the app runs normally; QR fields show a placeholder.
+# qrcode[pil]>=7.4.2
