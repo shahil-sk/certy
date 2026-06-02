@@ -7,16 +7,16 @@
   "filename_pattern": "",
   "positions": {
     "name": [
-      1028.301886792453,
-      669.2933333333333
+      1013.2075471698113,
+      695.6879999999999
     ],
     "hoe": [
-      515.0943396226415,
-      1050.1306666666667
+      520.7547169811321,
+      1033.1626666666668
     ],
     "mentor": [
-      1469.811320754717,
-      1052.016
+      1477.3584905660377,
+      1035.048
     ]
   },
   "fields": [
@@ -27,54 +27,54 @@
   "field_settings": {
     "name": {
       "visible": true,
-      "size": 75,
+      "size": 56,
       "color": "#000000",
-      "font_name": "CORBELLI",
+      "font_name": "CONSTAN",
       "align": "center",
       "opacity": 100,
-      "shadow": true,
+      "shadow": false,
       "shadow_offset": 4,
       "outline": false,
       "outline_width": 2,
       "field_type": "text",
       "qr_size": 120,
       "img_size": 120,
-      "condition_col": "e.g. grade",
-      "condition_val": "e.g. A"
+      "condition_col": "",
+      "condition_val": ""
     },
     "hoe": {
       "visible": true,
-      "size": 65,
-      "color": "#000000",
-      "font_name": "CORBELI",
-      "align": "center",
-      "opacity": 62,
-      "shadow": false,
-      "shadow_offset": 4,
-      "outline": false,
-      "outline_width": 2,
-      "field_type": "text",
-      "qr_size": 120,
-      "img_size": 120,
-      "condition_col": "e.g. grade",
-      "condition_val": "e.g. A"
-    },
-    "mentor": {
-      "visible": true,
-      "size": 65,
+      "size": 32,
       "color": "#000000",
       "font_name": "ARIAL",
       "align": "center",
-      "opacity": 62,
+      "opacity": 100,
       "shadow": false,
       "shadow_offset": 4,
       "outline": false,
       "outline_width": 2,
-      "field_type": "text",
+      "field_type": "qr",
       "qr_size": 120,
       "img_size": 120,
-      "condition_col": "e.g. grade",
-      "condition_val": "e.g. A"
+      "condition_col": "",
+      "condition_val": ""
+    },
+    "mentor": {
+      "visible": true,
+      "size": 32,
+      "color": "#000000",
+      "font_name": "ARIAL",
+      "align": "center",
+      "opacity": 100,
+      "shadow": false,
+      "shadow_offset": 4,
+      "outline": false,
+      "outline_width": 2,
+      "field_type": "image",
+      "qr_size": 120,
+      "img_size": 120,
+      "condition_col": "",
+      "condition_val": ""
     }
   }
 }

@@ -14,6 +14,8 @@ Sample files to get started with Certy quickly.
 2. File > Load Project > select `demo/demo.certy`
 3. Click **Generate** to produce 8 sample certificates
 
+`use "filename pattern" field to set custom filename`
 
+else
 
 `first 2 columns will be considerd for file naming`
